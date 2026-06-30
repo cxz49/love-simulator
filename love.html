@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#fce4ec">
+    <title>恋爱模拟器</title>
+    <style>
+        :root {
+            --pink-light: #fce4ec;
+            --pink-mid: #f8bbd0;
+            --pink-dark: #c2185b;
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-dark: #5a2d3a;
+            --shadow-soft: 0 8px 32px rgba(194, 24, 91, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 50%, #f48fb1 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            color: var(--text-dark);
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        .app-shell {
+            position: relative;
+            width: 100%;
+            max-width: 430px;
+            height: 100vh;
+            height: -webkit-fill-available;
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 20px 60px rgba(255, 182, 193, 0.4),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+        }
+
+        .glass-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            background: rgba(255, 255, 255, 0.1);
+            pointer-events: none;
+        }
+
+        @supports not (backdrop-filter: blur(1px)) {
+            .glass-layer {
+                background: rgba(255, 255, 255, 0.5);
+            }
+        }
+
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                        transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .page.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .safe-top { padding-top: env(safe-area-inset-top, 20px); }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
+
+        .unlock-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 40px;
+            gap: 30px;
+        }
+
+        .unlock-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            box-shadow: var(--shadow-soft);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .unlock-title {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--pink-dark), #880e4f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .pin-input-container {
+            display: flex;
+            gap: 12px;
+        }
+
+        .pin-dot {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .pin-dot.filled {
+            background: rgba(194, 24, 91, 0.2);
+            border-color: var(--pink-dark);
+        }
+
+        .pin-dot.active {
+            border-color: var(--pink-dark);
+            box-shadow: 0 0 20px rgba(194, 24, 91, 0.3);
+        }
+
+        .num-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .num-key {
+            aspect-ratio: 1;
+            border-radius: 20px;
+            border: none;
+            background: var(--glass-bg);
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.15s;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .num-key:active {
+            transform: scale(0.9);
+            background: rgba(194, 24, 91, 0.3);
+        }
+
+        .num-key.special {
+            background: transparent;
+            font-size: 16px;
+            color: #999;
+        }
+
+        .home-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            background: var(--glass-bg);
+            color: var(--text-dark);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .header-btn:active {
+            transform: scale(0.95);
+            background: rgba(194, 24, 91, 0.2);
+        }
+
+        .story-view {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+
+        .story-view::-webkit-scrollbar { display: none; }
+
+        .story-bubble {
+            background: var(--glass-bg);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 12px;
+            animation: fadeInUp 0.4s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+
+        .loading-dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--pink-dark);
+            animation: dotBounce 1.4s infinite;
+        }
+
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotBounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .options-bar {
+            display: flex;
+            gap: 10px;
+            padding: 12px 20px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .options-bar::-webkit-scrollbar { display: none; }
+
+        .option-chip {
+            flex-shrink: 0;
+            padding: 10px 18px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: var(--glass-bg);
+            color: var(--text-dark);
+            font-size: 14px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .option-chip:active {
+            background: rgba(194, 24, 91, 0.3);
+            transform: scale(0.95);
+        }
+
+        .input-bar {
+            display: flex;
+            gap: 10px;
+            padding: 12px 20px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .custom-input {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: var(--glass-bg);
+            color: var(--text-dark);
+            font-size: 15px;
+            outline: none;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        .custom-input::placeholder {
+            color: rgba(90, 45, 58, 0.4);
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:active {
+            transform: scale(0.9);
+        }
+
+        .menu-overlay {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .menu-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 30px;
+            padding: 20px;
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .menu-icon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .menu-icon-item:active {
+            background: rgba(194, 24, 91, 0.2);
+            transform: scale(0.9);
+        }
+
+        .menu-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .menu-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            width: 85%;
+            max-width: 350px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 30px;
+            padding: 30px;
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 20px 60px rgba(194, 24, 91, 0.3);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--pink-dark);
+            text-align: center;
+        }
+
+        .modal-text {
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: var(--text-dark);
+            text-align: center;
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 25px;
+            border: none;
+            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn:active {
+            transform: scale(0.95);
+            opacity: 0.9;
+        }
+
+        .toast {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            z-index: 200;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2s forwards;
+            pointer-events: none;
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        @keyframes toastOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .app-sim-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .back-arrow {
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            transition: transform 0.2s;
+        }
+
+        .back-arrow:active { transform: scale(0.8); }
+
+        .app-sim-title {
+            font-size: 18px;
+            font-weight: 700;
+            flex: 1;
+            text-align: center;
+        }
+
+        .app-sim-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .chat-msg {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .chat-msg.received {
+            background: var(--glass-bg);
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
+
+        .chat-msg.sent {
+            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .chat-input-bar {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .edit-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .edit-section {
+            background: var(--glass-bg);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .edit-section h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: var(--pink-dark);
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #7a4b5a;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.5);
+            color: var(--text-dark);
+            font-size: 14px;
+            outline: none;
+            -webkit-user-select: text;
+            user-select: text;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 25px;
+            border: none;
+            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
+            color: white;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-soft);
+            margin-top: 10px;
+        }
+
+        .save-btn:active {
+            transform: scale(0.95);
+            opacity: 0.9;
+        }
+
+        .api-status {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 11px;
+            color: rgba(90, 45, 58, 0.4);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        @media (max-width: 430px) {
+            .app-shell {
+                max-width: 100%;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-shell" id="appShell">
+    <div class="glass-layer"></div>
+
+    <!-- ========== 解锁页面 ========== -->
+    <div class="page active" id="unlockPage">
+        <div class="unlock-container safe-top safe-bottom">
+            <div class="unlock-avatar">💝</div>
+            <div class="unlock-title">恋爱模拟器</div>
+            <div class="pin-input-container" id="pinContainer">
+                <div class="pin-dot" data-index="0"></div>
+                <div class="pin-dot" data-index="1"></div>
+                <div class="pin-dot" data-index="2"></div>
+                <div class="pin-dot" data-index="3"></div>
+                <div class="pin-dot" data-index="4"></div>
+                <div class="pin-dot" data-index="5"></div>
+            </div>
+            <div class="num-pad">
+                <button class="num-key" onclick="handlePinInput('1')">1</button>
+                <button class="num-key" onclick="handlePinInput('2')">2</button>
+                <button class="num-key" onclick="handlePinInput('3')">3</button>
+                <button class="num-key" onclick="handlePinInput('4')">4</button>
+                <button class="num-key" onclick="handlePinInput('5')">5</button>
+                <button class="num-key" onclick="handlePinInput('6')">6</button>
+                <button class="num-key" onclick="handlePinInput('7')">7</button>
+                <button class="num-key" onclick="handlePinInput('8')">8</button>
+                <button class="num-key" onclick="handlePinInput('9')">9</button>
+                <button class="num-key special" onclick="handlePinInput('clear')">清除</button>
+                <button class="num-key" onclick="handlePinInput('0')">0</button>
+                <button class="num-key special" onclick="handlePinInput('delete')">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 主页 ========== -->
+    <div class="page" id="homePage">
+        <div class="home-header safe-top">
+            <button class="header-btn" onclick="switchToPage('editPage')">📝 人设</button>
+            <span style="font-weight:600;font-size:16px;">💕 恋爱日常</span>
+            <button class="header-btn" onclick="switchToPage('menuPage')">☰ 菜单</button>
+        </div>
+        <div class="story-view" id="storyView">
+            <div class="story-bubble">
+                欢迎回来 💕<br><br>
+                阳光洒在窗边，手机屏幕亮起。<br>
+                今天，你准备好和 TA 度过一段细腻的时光了吗？
+            </div>
+        </div>
+        <div class="options-bar" id="optionsBar">
+            <button class="option-chip" onclick="handleOption('温柔地回应')">🌸 温柔回应</button>
+            <button class="option-chip" onclick="handleOption('带着试探')">🌙 带着试探</button>
+            <button class="option-chip" onclick="handleOption('保持沉默')">🌱 保持沉默</button>
+        </div>
+        <div class="input-bar safe-bottom">
+            <input type="text" class="custom-input" id="customInput" placeholder="输入你的行为或台词..." maxlength="200">
+            <button class="send-btn" onclick="handleCustomInput()">➤</button>
+        </div>
+        <div class="api-status" id="apiStatus">⚡ 就绪</div>
+    </div>
+
+    <!-- ========== 菜单页 ========== -->
+    <div class="page menu-overlay" id="menuPage" onclick="if(event.target===this)switchToPage('homePage')">
+        <div class="menu-content safe-bottom">
+            <div class="menu-grid">
+                <div class="menu-icon-item" onclick="openSocialApp('微信')">
+                    <div class="menu-icon">💬</div>
+                    <span class="menu-label">微信</span>
+                </div>
+                <div class="menu-icon-item" onclick="openSocialApp('微博')">
+                    <div class="menu-icon">📱</div>
+                    <span class="menu-label">微博</span>
+                </div>
+                <div class="menu-icon-item" onclick="openSocialApp('抖音')">
+                    <div class="menu-icon">🎵</div>
+                    <span class="menu-label">抖音</span>
+                </div>
+                <div class="menu-icon-item" onclick="openSocialApp('小红书')">
+                    <div class="menu-icon">📕</div>
+                    <span class="menu-label">小红书</span>
+                </div>
+                <div class="menu-icon-item" onclick="openSocialApp('豆瓣')">
+                    <div class="menu-icon">📚</div>
+                    <span class="menu-label">豆瓣</span>
+                </div>
+                <div class="menu-icon-item" onclick="openSocialApp('信息')">
+                    <div class="menu-icon">✉️</div>
+                    <span class="menu-label">信息</span>
+                </div>
+                <div class="menu-icon-item" onclick="openSocialApp('电话')">
+                    <div class="menu-icon">📞</div>
+                    <span class="menu-label">电话</span>
+                </div>
+                <div class="menu-icon-item" onclick="openSocialApp('X')">
+                    <div class="menu-icon">🐦</div>
+                    <span class="menu-label">X</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 社交模拟页 ========== -->
+    <div class="page" id="socialPage">
+        <div class="app-sim-header safe-top">
+            <span class="back-arrow" onclick="switchToPage('homePage')">←</span>
+            <span class="app-sim-title" id="socialTitle">社交应用</span>
+            <span style="width:24px;"></span>
+        </div>
+        <div class="app-sim-body" id="socialBody">
+            <div class="chat-msg received">✨ 应用已加载，开始互动吧</div>
+        </div>
+        <div class="chat-input-bar safe-bottom">
+            <input type="text" class="custom-input" id="socialInput" placeholder="输入消息..." maxlength="200">
+            <button class="send-btn" onclick="handleSocialSend()">➤</button>
+        </div>
+    </div>
+
+    <!-- ========== 编辑页 ========== -->
+    <div class="page" id="editPage">
+        <div class="home-header safe-top">
+            <button class="header-btn" onclick="switchToPage('homePage')">← 返回</button>
+            <span style="font-weight:600;font-size:16px;">人设编辑中心</span>
+            <span style="width:60px;"></span>
+        </div>
+        <div class="edit-scroll safe-bottom">
+            <div class="edit-section">
+                <h3>👤 我的人设</h3>
+                <div class="form-group">
+                    <label>昵称</label>
+                    <input type="text" id="myName" value="小太阳" placeholder="你的昵称">
+                </div>
+                <div class="form-group">
+                    <label>性格标签（逗号分隔）</label>
+                    <input type="text" id="myTrait" value="活泼直白, 慢热, 敏感" placeholder="如：开朗,细心,傲娇">
+                </div>
+                <div class="form-group">
+                    <label>说话风格 / 口头禅</label>
+                    <input type="text" id="myStyle" value="喜欢用'哈哈'，爱撒娇" placeholder="你的说话特点">
+                </div>
+                <div class="form-group">
+                    <label>雷点 / 底线</label>
+                    <textarea id="myAvoid" rows="2" placeholder="不能接受的行为">被冷落, 被欺骗</textarea>
+                </div>
+            </div>
+            
+            <div class="edit-section">
+                <h3>💕 攻略角色</h3>
+                <div class="form-group">
+                    <label>角色名称</label>
+                    <input type="text" id="targetName" value="沈瑜" placeholder="TA的名字">
+                </div>
+                <div class="form-group">
+                    <label>性格偏向</label>
+                    <input type="text" id="targetTrait" value="占有欲强, 内心缺安全感" placeholder="如：温柔,霸道,傲娇">
+                </div>
+                <div class="form-group">
+                    <label>说话风格</label>
+                    <input type="text" id="targetStyle" value="低音炮，试探性，喜欢反问" placeholder="TA的说话特点">
+                </div>
+                <div class="form-group">
+                    <label>日常习惯 / 小动作</label>
+                    <textarea id="targetHabit" rows="2" placeholder="TA的习惯行为">睡前必问行踪，爱吃醋</textarea>
+                </div>
+            </div>
+            
+            <button class="save-btn" onclick="saveCharacters()">💾 保存人设并刷新剧情</button>
+        </div>
+    </div>
+</div>
+
+<!-- 弹窗容器 -->
+<div id="modalContainer"></div>
+<!-- Toast容器 -->
+<div id="toastContainer"></div>
+
+<script>
+// ======================================================
+// 🔐 配置区 - 请替换为你的真实API Key
+// ======================================================
+const API_CONFIG = {
+    KEY: 'sk -ff478badb9ff431da0eae3c5c7d337d8',  // ⚠️ 替换这里！格式：sk-xxxxxxxxxxxxxxxx
+    URL: 'https://api.deepseek.com/v1/chat/completions',
+    MODEL: 'deepseek-chat'
+};
+
+// ======================================================
+// 📦 数据存储管理
+// ======================================================
+const Storage = {
+    KEY: 'love_sim_data_v2',
+    
+    encrypt(data) {
+        try {
+            return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+        } catch(e) {
+            return btoa(JSON.stringify(data));
+        }
+    },
+    
+    decrypt(str) {
+        try {
+            return JSON.parse(decodeURIComponent(escape(atob(str))));
+        } catch(e) {
+            return JSON.parse(atob(str));
+        }
+    },
+    
+    save(data) {
+        try {
+            localStorage.setItem(this.KEY, this.encrypt(data));
+            return true;
+        } catch(e) {
+            console.warn('存储失败:', e);
+            return false;
+        }
+    },
+    
+    load() {
+        try {
+            const encrypted = localStorage.getItem(this.KEY);
+            return encrypted ? this.decrypt(encrypted) : null;
+        } catch(e) {
+            console.warn('读取失败:', e);
+            return null;
+        }
+    },
+    
+    clear() {
+        localStorage.removeItem(this.KEY);
+    }
+};
+
+// ======================================================
+// 🎮 游戏状态管理
+// ======================================================
+const GameState = {
+    pin: '',
+    password: '123456',
+    characters: {
+        self: { 
+            name: '小太阳', 
+            trait: '活泼直白,慢热,敏感', 
+            style: '喜欢用"哈哈"，爱撒娇', 
+            avoid: '被冷落,被欺骗' 
+        },
+        target: { 
+            name: '沈瑜', 
+            trait: '占有欲强,内心缺安全感', 
+            style: '低音炮，试探性，喜欢反问', 
+            habit: '睡前必问行踪，爱吃醋' 
+        }
+    },
+    context: '',
+    history: [],
+    currentSocialApp: '',
+    
+    init() {
+        const saved = Storage.load();
+        if (saved) {
+            this.password = saved.password || this.password;
+            this.characters = saved.characters || this.characters;
+            this.context = saved.context || '';
+            this.history = saved.history || [];
+        }
+        this.loadToForm();
+    },
+    
+    persist() {
+        Storage.save({
+            password: this.password,
+            characters: this.characters,
+            context: this.context,
+            history: this.history.slice(-50)
+        });
+    },
+    
+    loadToForm() {
+        const fields = {
+            myName: this.characters.self.name,
+            myTrait: this.characters.self.trait,
+            myStyle: this.characters.self.style,
+            myAvoid: this.characters.self.avoid,
+            targetName: this.characters.target.name,
+            targetTrait: this.characters.target.trait,
+            targetStyle: this.characters.target.style,
+            targetHabit: this.characters.target.habit
+        };
+        
+        Object.entries(fields).forEach(([id, value]) => {
+            const el = document.getElementById(id);
+            if (el) el.value = value;
+        });
+    },
+    
+    saveFromForm() {
+        const get = (id, fallback) => document.getElementById(id)?.value || fallback;
+        this.characters.self = {
+            name: get('myName', '小太阳'),
+            trait: get('myTrait', '活泼直白'),
+            style: get('myStyle', '爱撒娇'),
+            avoid: get('myAvoid', '被冷落')
+        };
+        this.characters.target = {
+            name: get('targetName', '沈瑜'),
+            trait: get('targetTrait', '占有欲强'),
+            style: get('targetStyle', '低音炮'),
+            habit: get('targetHabit', '爱吃醋')
+        };
+        this.persist();
+    }
+};
+
+// ======================================================
+// 🎨 UI控制器
+// ======================================================
+const UI = {
+    currentPage: 'unlockPage',
+    
+    switchTo(pageId) {
+        if (this.currentPage === pageId) return;
+        
+        const oldPage = document.getElementById(this.currentPage);
+        const newPage = document.getElementById(pageId);
+        
+        if (!newPage) return;
+        
+        if (oldPage) oldPage.classList.remove('active');
+        newPage.classList.add('active');
+        this.currentPage = pageId;
+        
+        const scrollView = newPage.querySelector('.story-view, .edit-scroll, .app-sim-body');
+        if (scrollView) scrollView.scrollTop = 0;
+    },
+    
+    showModal(title, text, buttonText, callback) {
+        const container = document.getElementById('modalContainer');
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-title">${title}</div>
+                <div class="modal-text">${text}</div>
+                <button class="modal-btn">${buttonText}</button>
+            </div>
+        `;
+        container.appendChild(modal);
+        
+        modal.querySelector('.modal-btn').addEventListener('click', () => {
+            modal.remove();
+            if (callback) callback();
+        });
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+    },
+    
+    showToast(message, duration = 2500) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast.parentNode) toast.remove();
+        }, duration + 300);
+    },
+    
+    appendStory(html) {
+        const view = document.getElementById('storyView');
+        if (!view) return;
+        
+        const bubble = document.createElement('div');
+        bubble.className = 'story-bubble';
+        bubble.innerHTML = html;
+        view.appendChild(bubble);
+        view.scrollTop = view.scrollHeight;
+    },
+    
+    showLoading() {
+        this.appendStory(`
+            <div class="loading-dots">
+                <span></span><span></span><span></span>
+            </div>
+            <span style="color:#999;font-size:13px;">正在生成专属剧情...</span>
+        `);
+    },
+    
+    updateOptions(options) {
+        const bar = document.getElementById('optionsBar');
+        if (!bar) return;
+        bar.innerHTML = options.map(opt => 
+            `<button class="option-chip" onclick="handleOption('${opt.replace(/'/g, "\\'")}')">${opt}</button>`
+        ).join('');
+    },
+    
+    setApiStatus(text) {
+        const el = document.getElementById('apiStatus');
+        if (el) el.textContent = text;
+    },
+    
+    // 社交应用相关
+    updateSocialBody(html) {
+        const body = document.getElementById('socialBody');
+        if (body) {
+            body.innerHTML = html;
+            body.scrollTop = body.scrollHeight;
+        }
+    },
+    
+    appendSocialMessage(text, isSent) {
+        const body = document.getElementById('socialBody');
+        if (!body) return;
+        
+        const msg = document.createElement('div');
+        msg.className = `chat-msg ${isSent ? 'sent' : 'received'}`;
+        msg.textContent = text;
+        body.appendChild(msg);
+        body.scrollTop = body.scrollHeight;
+    }
+};
+
+// ======================================================
+// 🔢 密码解锁
+// ======================================================
+function handlePinInput(value) {
+    if (value === 'clear') {
+        GameState.pin = '';
+    } else if (value === 'delete') {
+        GameState.pin = GameState.pin.slice(0, -1);
+    } else {
+        if (GameState.pin.length >= 6) return;
+        GameState.pin += value;
+    }
+    
+    updatePinDisplay();
+    
+    if (GameState.pin.length === 6) {
+        setTimeout(() => verifyPin(), 200);
+    }
+}
+
+function updatePinDisplay() {
+    const dots = document.querySelectorAll('.pin-dot');
+    dots.forEach((dot, i) => {
+        dot.textContent = i < GameState.pin.length ? '●' : '';
+        dot.classList.toggle('filled', i < GameState.pin.length);
+        dot.classList.toggle('active', i === GameState.pin.length);
+    });
+}
+
+function verifyPin() {
+    if (GameState.pin === GameState.password) {
+        GameState.pin = '';
+        updatePinDisplay();
+        UI.switchTo('homePage');
+        if (!GameState.context) {
+            generateAIResponse('游戏开始，请生成一段温馨的日常开场剧情');
+        }
+    } else {
+        GameState.pin = '';
+        updatePinDisplay();
+        UI.showToast('密码错误，请重试 🔒');
+        if (navigator.vibrate) {
+            navigator.vibrate([50, 50, 50]);
+        }
+    }
+}
+
+// ======================================================
+// 🧠 AI交互核心
+// ======================================================
+async function generateAIResponse(userAction) {
+    // 检查API Key
+    if (!API_CONFIG.KEY || API_CONFIG.KEY.includes('你的密钥') || API_CONFIG.KEY.includes('xxx')) {
+        UI.appendStory(`
+            ⚠️ <b>请先配置API Key</b><br><br>
+            1. 打开此HTML文件<br>
+            2. 搜索 <code>sk-你的密钥</code><br>
+            3. 替换为你的真实DeepSeek API Key<br>
+            4. 重新部署
+        `);
+        return;
+    }
+    
+    UI.showLoading();
+    UI.setApiStatus('⚡ 请求中...');
+    
+    const { self, target } = GameState.characters;
+    const systemPrompt = `你是一个沉浸式恋爱模拟器的AI内核。
+
+【玩家角色】
+- 昵称：${self.name}
+- 性格：${self.trait}
+- 说话风格：${self.style}
+- 雷点/底线：${self.avoid}
+
+【攻略对象】
+- 名字：${target.name}
+- 性格：${target.trait}
+- 说话风格：${target.style}
+- 习惯：${target.habit}
+
+【重要规则】
+1. 所有对话和剧情必须严格按照以上人设生成
+2. 偶尔可插入安全事件提醒（格式：##EVENT## 事件描述），例如异地登录警告
+3. 每次回复末尾必须提供3个选项，格式严格为：
+   选项A：[描述]
+   选项B：[描述]
+   选项C：[描述]
+4. 文字要细腻、有画面感，营造真实的恋爱氛围
+5. 回复控制在300字以内`;
+
+    const userPrompt = `当前关系背景：${GameState.context || '刚开始互相了解'}
+玩家动作：${userAction}
+请继续生成剧情。`;
+
+    try {
+        const response = await fetch(API_CONFIG.URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_CONFIG.KEY}`
+            },
+            body: JSON.stringify({
+                model: API_CONFIG.MODEL,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ],
+                max_tokens: 600,
+                temperature: 0.85
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        let content = data.choices[0].message.content;
+        
+        // 处理安全事件
+        let eventText = null;
+        if (content.includes('##EVENT##')) {
+            const parts = content.split('##EVENT##');
+            content = parts[0].trim();
+            eventText = parts[1]?.trim() || null;
+        }
+        
+        // 解析选项
+        const optionRegex = /选项([ABC])[：:]\s*(.+)/g;
+        const options = [];
+        let match;
+        let mainText = content;
+        
+        while ((match = optionRegex.exec(content)) !== null) {
+            options.push(`${match[1]}: ${match[2].trim()}`);
+        }
+        
+        if (options.length > 0) {
+            mainText = content.split(/选项[ABC][：:]/)[0].trim();
+        }
+        
+        // 移除加载动画
+        const view = document.getElementById('storyView');
+        if (view) {
+            const bubbles = view.querySelectorAll('.story-bubble');
+            const lastBubble = bubbles[bubbles.length - 1];
+            if (lastBubble?.querySelector('.loading-dots')) {
+                lastBubble.remove();
+            }
+        }
+        
+        // 显示内容
+        UI.appendStory(mainText.replace(/\n/g, '<br>'));
+        
+        // 更新选项
+        if (options.length > 0) {
+            UI.updateOptions(options);
+        } else {
+            UI.updateOptions(['继续聊天', '换个话题', '看看反应']);
+        }
+        
+        // 触发安全事件
+        if (eventText) {
+            setTimeout(() => {
+                UI.showModal('📱 安全提醒', eventText, '查看详情', () => {
+                    generateAIResponse('玩家查看了安全提醒');
+                });
+            }, 1000);
+        }
+        
+        // 更新状态
+        GameState.context = '关系在慢慢发展，越来越熟悉彼此';
+        GameState.history.push({ 
+            action: userAction, 
+            time: new Date().toISOString() 
+        });
+        GameState.persist();
+        UI.setApiStatus('✅ 已响应');
+        
+    } catch (error) {
+        // 移除加载动画
+        const view = document.getElementById('storyView');
+        if (view) {
+            const bubbles = view.querySelectorAll('.story-bubble');
+            const lastBubble = bubbles[bubbles.length - 1];
+            if (lastBubble?.querySelector('.loading-dots')) {
+                lastBubble.remove();
+            }
+        }
+        
+        UI.appendStory(`
+            ❌ <b>请求失败</b><br>
+            <small style="color:#999;">${error.message}</small><br>
+            <small>请检查：<br>
+            1. API Key是否正确<br>
+            2. 网络连接是否正常<br>
+            3. DeepSeek账户余额</small>
+        `);
+        UI.setApiStatus('❌ 错误');
+    }
+}
+
+// ======================================================
+// 🎯 用户交互处理
+// ======================================================
+function handleOption(option) {
+    generateAIResponse(`玩家选择了：${option}`);
+}
+
+function handleCustomInput() {
+    const input = document.getElementById('customInput');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    input.value = '';
+    UI.appendStory(`<b>你：</b>${text}`);
+    generateAIResponse(`玩家自由输入：${text}`);
+}
+
+// ======================================================
+// 📱 社交应用模拟
+// ======================================================
+function openSocialApp(appName) {
+    GameState.currentSocialApp = appName;
+    document.getElementById('socialTitle').textContent = appName;
+    
+    const { self, target } = GameState.characters;
+    UI.updateSocialBody(`
+        <div class="chat-msg received">
+            ✨ <b>${appName}</b> 已加载
+        </div>
+        <div class="chat-msg received">
+            系统已根据「${self.name}」和「${target.name}」的人设<br>
+            自动适配了聊天氛围
+        </div>
+        <div class="chat-msg received">
+            开始互动吧~
+        </div>
+    `);
+    
+    UI.switchTo('socialPage');
+}
+
+function handleSocialSend() {
+    const input = document.getElementById('socialInput');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    UI.appendSocialMessage(text, true);
+    input.value = '';
+    
+    // 模拟回复
+    setTimeout(() => {
+        const { target } = GameState.characters;
+        const replies = [
+            '嗯，我知道了',
+            `${target.name}：今天过得怎么样？`,
+            '有点想你了...',
+            '好的，晚点聊',
+            '（看了看消息，嘴角微扬）'
+        ];
+        const reply = replies[Math.floor(Math.random() * replies.length)];
+        UI.appendSocialMessage(reply, false);
+    }, 800 + Math.random() * 1500);
+}
+
+// ======================================================
+// 💾 人设保存
+// ======================================================
+function saveCharacters() {
+    GameState.saveFromForm();
+    UI.showToast('✅ 人设已保存！剧情将按新设定展开');
+    
+    setTimeout(() => {
+        UI.switchTo('homePage');
+        GameState.context = '人设刚刚更新，重新开始日常';
+        UI.appendStory('<b>系统：</b>人设已更新，剧情将按新设定重新展开 ✨');
+        generateAIResponse('人设已更新，请根据新设定重新开始日常互动');
+    }, 800);
+}
+
+// ======================================================
+// 🚀 应用初始化
+// ======================================================
+function init() {
+    GameState.init();
+    updatePinDisplay();
+    
+    // 键盘支持（电脑调试用）
+    document.addEventListener('keydown', function(e) {
+        if (UI.currentPage === 'unlockPage') {
+            if (e.key >= '0' && e.key <= '9') {
+                handlePinInput(e.key);
+            } else if (e.key === 'Backspace') {
+                handlePinInput('delete');
+            } else if (e.key === 'Escape') {
+                handlePinInput('clear');
+            }
+        } else if (UI.currentPage === 'homePage' && e.key === 'Enter') {
+            if (document.activeElement === document.getElementById('customInput')) {
+                handleCustomInput();
+            }
+        }
+    });
+    
+    // 防止意外手势缩放
+    document.addEventListener('gesturestart', function(e) {
+        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+        }
+    });
+    
+    console.log('💕 恋爱模拟器已就绪');
+    console.log('📱 默认密码:', GameState.password);
+    console.log('🔑 API状态:', API_CONFIG.KEY.includes('xxx') || API_CONFIG.KEY.includes('你的密钥') ? '未配置' : '已配置');
+    console.log('💡 提示：搜索 sk-你的密钥 替换为真实API Key');
+}
+
+// 启动应用
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
+
+// 导出到全局
+window.switchToPage = UI.switchTo.bind(UI);
+window.handleOption = handleOption;
+window.handleCustomInput = handleCustomInput;
+window.openSocialApp = openSocialApp;
+window.handleSocialSend = handleSocialSend;
+window.saveCharacters = saveCharacters;
+window.handlePinInput = handlePinInput;
+</script>
+
+</body>
+</html>
