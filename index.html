@@ -807,7 +807,7 @@ const State = {
         const s = Store.load();
         if (s) {
             this.password = s.password || '123456';
-            this.apiKey = s.apiKey || 'sk-1f42d87f026a48d2bbff8de4488cb5d0';
+            this.apiKey = s.apiKey || 'sk-你的密钥';
             this.targets = s.targets || this.defaultTargets();
             this.self = s.self || this.defaultSelf();
             this.world = s.world || '大学校园，互相暗恋';
@@ -937,7 +937,7 @@ function sendCustom() {
 
 async function generate(action) {
     const key = State.apiKey;
-    if (!key || key === 'sk-1f42d87f026a48d2bbff8de4488cb5d0' || key.includes('xxx')) {
+    if (!key || key === 'sk-你的密钥' || key.includes('xxx')) {
         UI.appendStory('⚠️ 请先进入「人设编辑中心」设置 API Key。');
         return;
     }
@@ -1058,7 +1058,7 @@ document.getElementById('removeTargetBtn').onclick = removeCurrentTarget;
 
 async function aiOptimizeTarget() {
     const key = State.apiKey;
-    if (!key || key === 'sk-1f42d87f026a48d2bbff8de4488cb5d0') { UI.toast('请先设置 API Key'); return; }
+    if (!key || key === 'sk-你的密钥') { UI.toast('请先设置 API Key'); return; }
     const t = State.targets[State._editIdx];
     const prompt = `请根据以下基础信息，生成一个更详细、真实的角色人设，补充年龄、身高体重、家庭背景、教育程度、性格、说话风格、习惯和背景故事，使其接近现实中的真实人物。返回格式为JSON，键名：name, age, height, weight, family, edu, trait, style, habit, backstory。现有信息：${JSON.stringify(t)}`;
     try {
