@@ -13,136 +13,641 @@
             --pink-mid: #f8bbd0;
             --pink-dark: #c2185b;
             --glass-bg: rgba(255, 255, 255, 0.25);
-            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.35);
             --text-dark: #5a2d3a;
             --shadow-soft: 0 8px 32px rgba(194, 24, 91, 0.15);
-            --danger: #e74c3c;
-            --success: #2ecc71;
         }
 
-        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
         body {
             background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 50%, #f48fb1 100%);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex; justify-content: center; align-items: center;
-            min-height: 100vh; min-height: -webkit-fill-available;
-            color: var(--text-dark); overflow: hidden;
-            position: fixed; width: 100%; top:0; left:0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            height: -webkit-fill-available;
+            color: var(--text-dark);
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
         }
+
         .app-shell {
-            position: relative; width: 100%; max-width: 430px;
-            height: 100vh; height: -webkit-fill-available;
-            background: rgba(255,255,255,0.2);
-            box-shadow: 0 20px 60px rgba(255,182,193,0.4), inset 0 0 0 1px rgba(255,255,255,0.3);
+            position: relative;
+            width: 100%;
+            max-width: 430px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 60px rgba(255, 182, 193, 0.4),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.3);
             overflow: hidden;
         }
+
         .glass-layer {
-            position: absolute; top:0; left:0; right:0; bottom:0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             backdrop-filter: blur(30px) saturate(180%);
             -webkit-backdrop-filter: blur(30px) saturate(180%);
-            background: rgba(255,255,255,0.1); pointer-events: none;
+            background: rgba(255, 255, 255, 0.1);
+            pointer-events: none;
         }
-        @supports not (backdrop-filter: blur(1px)) { .glass-layer { background: rgba(255,255,255,0.5); } }
+
+        @supports not (backdrop-filter: blur(1px)) {
+            .glass-layer {
+                background: rgba(255, 255, 255, 0.5);
+            }
+        }
 
         .page {
-            position: absolute; top:0; left:0; width:100%; height:100%;
-            display: flex; flex-direction: column;
-            opacity:0; transform: translateY(10px);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: translateY(10px);
             transition: opacity 0.35s ease, transform 0.35s ease;
-            pointer-events: none; z-index: 1;
+            pointer-events: none;
+            z-index: 1;
         }
-        .page.active { opacity:1; transform: translateY(0); pointer-events: auto; }
-        .safe-top { padding-top: env(safe-area-inset-top, 20px); }
-        .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
+
+        .page.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .safe-top {
+            padding-top: env(safe-area-inset-top, 20px);
+        }
+
+        .safe-bottom {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
 
         /* 解锁页 */
-        .unlock-container { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding:40px; gap:30px; }
-        .unlock-avatar { width:100px; height:100px; border-radius:50%; background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark)); display:flex; align-items:center; justify-content:center; font-size:50px; box-shadow: var(--shadow-soft); animation: pulse 2s infinite; }
-        @keyframes pulse { 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.05); } }
-        .unlock-title { font-size:28px; font-weight:700; background: linear-gradient(135deg, var(--pink-dark), #880e4f); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-        .pin-input-container { display:flex; gap:12px; }
-        .pin-dot { width:48px; height:48px; border-radius:16px; background:var(--glass-bg); border:2px solid var(--glass-border); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; transition:0.3s; }
-        .pin-dot.filled { background:rgba(194,24,91,0.2); border-color:var(--pink-dark); }
-        .pin-dot.active { border-color:var(--pink-dark); box-shadow:0 0 20px rgba(194,24,91,0.3); }
-        .num-pad { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; width:100%; max-width:280px; }
-        .num-key { aspect-ratio:1; border-radius:20px; border:none; background:var(--glass-bg); font-size:24px; font-weight:600; color:var(--text-dark); cursor:pointer; transition:0.15s; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; }
-        .num-key:active { transform:scale(0.9); background:rgba(194,24,91,0.3); }
-        .num-key.special { background:transparent; font-size:16px; color:#999; }
+        .unlock-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 40px;
+            gap: 30px;
+        }
+
+        .unlock-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            box-shadow: var(--shadow-soft);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .unlock-title {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--pink-dark), #880e4f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .pin-dot {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .pin-dot.filled {
+            background: rgba(194, 24, 91, 0.2);
+            border-color: var(--pink-dark);
+        }
+
+        .pin-dot.active {
+            border-color: var(--pink-dark);
+            box-shadow: 0 0 20px rgba(194, 24, 91, 0.3);
+        }
+
+        .num-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .num-key {
+            aspect-ratio: 1;
+            border-radius: 20px;
+            border: none;
+            background: var(--glass-bg);
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: 0.15s;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .num-key:active {
+            transform: scale(0.9);
+            background: rgba(194, 24, 91, 0.3);
+        }
+
+        .num-key.special {
+            background: transparent;
+            font-size: 16px;
+            color: #999;
+        }
 
         /* 主页 */
-        .home-header { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; border-bottom:1px solid rgba(255,255,255,0.2); }
-        .header-btn { padding:8px 16px; border-radius:20px; border:none; background:var(--glass-bg); color:var(--text-dark); font-size:14px; font-weight:500; cursor:pointer; transition:0.2s; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
-        .header-btn:active { transform:scale(0.95); background:rgba(194,24,91,0.2); }
-        .story-view { flex:1; overflow-y:auto; padding:20px; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; }
-        .story-view::-webkit-scrollbar { display:none; }
-        .story-bubble { background:var(--glass-bg); border-radius:20px; padding:16px; margin-bottom:12px; animation:fadeInUp 0.4s ease; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); line-height:1.6; font-size:15px; }
-        @keyframes fadeInUp { from{ opacity:0; transform:translateY(20px); } to{ opacity:1; transform:translateY(0); } }
-        .loading-dots { display:inline-flex; gap:4px; }
-        .loading-dots span { width:6px; height:6px; border-radius:50%; background:var(--pink-dark); animation:dotBounce 1.4s infinite; }
-        .loading-dots span:nth-child(2) { animation-delay:0.2s; } .loading-dots span:nth-child(3) { animation-delay:0.4s; }
-        @keyframes dotBounce { 0%,80%,100%{ transform:scale(0); } 40%{ transform:scale(1); } }
-        .options-bar { display:flex; gap:10px; padding:12px 20px; overflow-x:auto; -webkit-overflow-scrolling:touch; border-top:1px solid rgba(255,255,255,0.2); }
-        .options-bar::-webkit-scrollbar { display:none; }
-        .option-chip { flex-shrink:0; padding:10px 18px; border-radius:25px; border:1px solid rgba(255,255,255,0.3); background:var(--glass-bg); color:var(--text-dark); font-size:14px; white-space:nowrap; cursor:pointer; transition:0.2s; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
-        .option-chip:active { background:rgba(194,24,91,0.3); transform:scale(0.95); }
-        .input-bar { display:flex; gap:10px; padding:12px 20px 20px; border-top:1px solid rgba(255,255,255,0.2); }
-        .custom-input { flex:1; padding:12px 20px; border-radius:25px; border:1px solid rgba(255,255,255,0.3); background:var(--glass-bg); color:var(--text-dark); font-size:15px; outline:none; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); -webkit-user-select:text; user-select:text; }
-        .custom-input::placeholder { color:rgba(90,45,58,0.4); }
-        .send-btn { width:48px; height:48px; border-radius:50%; border:none; background:linear-gradient(135deg, var(--pink-mid), var(--pink-dark)); color:white; font-size:20px; cursor:pointer; transition:0.2s; flex-shrink:0; }
-        .send-btn:active { transform:scale(0.9); }
-        .current-target-badge { display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.3); border-radius:15px; padding:4px 12px; font-size:13px; margin-left:10px; cursor:pointer; }
+        .home-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            background: var(--glass-bg);
+            color: var(--text-dark);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .header-btn:active {
+            transform: scale(0.95);
+            background: rgba(194, 24, 91, 0.2);
+        }
+
+        .story-view {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+
+        .story-view::-webkit-scrollbar { display: none; }
+
+        .story-bubble {
+            background: var(--glass-bg);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 12px;
+            animation: fadeInUp 0.4s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            line-height: 1.7;
+            font-size: 15px;
+            white-space: pre-wrap;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loading-dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+
+        .loading-dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--pink-dark);
+            animation: dotBounce 1.4s infinite;
+        }
+
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotBounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .options-bar {
+            display: flex;
+            gap: 10px;
+            padding: 12px 20px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .options-bar::-webkit-scrollbar { display: none; }
+
+        .option-chip {
+            flex-shrink: 0;
+            padding: 10px 18px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: var(--glass-bg);
+            color: var(--text-dark);
+            font-size: 14px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .option-chip:active {
+            background: rgba(194, 24, 91, 0.3);
+            transform: scale(0.95);
+        }
+
+        .input-bar {
+            display: flex;
+            gap: 10px;
+            padding: 12px 20px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .custom-input {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: var(--glass-bg);
+            color: var(--text-dark);
+            font-size: 15px;
+            outline: none;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        .custom-input::placeholder {
+            color: rgba(90, 45, 58, 0.4);
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:active {
+            transform: scale(0.9);
+        }
+
+        .current-target-badge {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 4px 12px;
+            font-size: 13px;
+            cursor: pointer;
+        }
 
         /* 菜单 */
-        .menu-overlay { background:rgba(0,0,0,0.3); backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); }
-        .menu-content { flex:1; display:flex; flex-direction:column; justify-content:flex-end; padding:20px; }
-        .menu-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; background:rgba(255,255,255,0.4); border-radius:30px; padding:20px; backdrop-filter:blur(30px); -webkit-backdrop-filter:blur(30px); border:1px solid rgba(255,255,255,0.5); animation:slideUp 0.4s ease; }
-        @keyframes slideUp { from{ opacity:0; transform:translateY(100px); } to{ opacity:1; transform:translateY(0); } }
-        .menu-icon-item { display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px; border-radius:20px; cursor:pointer; transition:0.2s; }
-        .menu-icon-item:active { background:rgba(194,24,91,0.2); transform:scale(0.9); }
-        .menu-icon { width:50px; height:50px; border-radius:16px; background:linear-gradient(135deg, var(--pink-mid), var(--pink-dark)); display:flex; align-items:center; justify-content:center; font-size:24px; }
-        .menu-label { font-size:12px; font-weight:500; color:var(--text-dark); }
+        .menu-overlay {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .menu-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 30px;
+            padding: 20px;
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(100px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .menu-icon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .menu-icon-item:active {
+            background: rgba(194, 24, 91, 0.2);
+            transform: scale(0.9);
+        }
+
+        .menu-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .menu-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
 
         /* 社交模拟 */
-        .app-sim-header { display:flex; align-items:center; gap:15px; padding:15px 20px; border-bottom:1px solid rgba(255,255,255,0.2); }
-        .back-arrow { font-size:24px; cursor:pointer; padding:5px; transition:0.2s; } .back-arrow:active { transform:scale(0.8); }
-        .app-sim-title { font-size:18px; font-weight:700; flex:1; text-align:center; }
-        .app-sim-body { flex:1; overflow-y:auto; padding:20px; -webkit-overflow-scrolling:touch; }
-        .chat-msg { max-width:80%; padding:12px 18px; border-radius:20px; margin-bottom:12px; font-size:14px; line-height:1.5; animation:fadeInUp 0.3s ease; }
-        .chat-msg.received { background:var(--glass-bg); margin-right:auto; border-bottom-left-radius:5px; }
-        .chat-msg.sent { background:linear-gradient(135deg, var(--pink-mid), var(--pink-dark)); color:white; margin-left:auto; border-bottom-right-radius:5px; }
-        .chat-input-bar { display:flex; gap:10px; padding:15px 20px 25px; border-top:1px solid rgba(255,255,255,0.2); }
+        .app-sim-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .back-arrow {
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            transition: 0.2s;
+        }
+
+        .back-arrow:active { transform: scale(0.8); }
+
+        .app-sim-title {
+            font-size: 18px;
+            font-weight: 700;
+            flex: 1;
+            text-align: center;
+        }
+
+        .app-sim-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .chat-msg {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .chat-msg.received {
+            background: var(--glass-bg);
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
+
+        .chat-msg.sent {
+            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .chat-input-bar {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
 
         /* 编辑页 */
-        .edit-scroll { flex:1; overflow-y:auto; padding:20px; -webkit-overflow-scrolling:touch; }
-        .edit-section { background:var(--glass-bg); border-radius:20px; padding:20px; margin-bottom:20px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.2); }
-        .edit-section h3 { font-size:16px; margin-bottom:15px; color:var(--pink-dark); }
-        .form-group { margin-bottom:12px; }
-        .form-group label { display:block; font-size:13px; font-weight:600; color:#7a4b5a; margin-bottom:5px; }
-        .form-group input, .form-group textarea { width:100%; padding:12px 16px; border-radius:15px; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.5); color:var(--text-dark); font-size:14px; outline:none; -webkit-user-select:text; user-select:text; font-family:inherit; }
-        .form-group textarea { resize:vertical; min-height:60px; }
-        .save-btn { width:100%; padding:16px; border-radius:25px; border:none; background:linear-gradient(135deg, var(--pink-mid), var(--pink-dark)); color:white; font-size:17px; font-weight:700; cursor:pointer; transition:0.2s; box-shadow:var(--shadow-soft); margin-top:10px; }
-        .save-btn:active { transform:scale(0.95); opacity:0.9; }
-        .target-tabs { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:15px; }
-        .target-tab { padding:6px 14px; border-radius:20px; background:var(--glass-bg); cursor:pointer; font-size:13px; transition:0.2s; border:1px solid var(--glass-border); }
-        .target-tab.active { background:var(--pink-dark); color:white; border-color:var(--pink-dark); }
-        .add-target-btn { padding:6px 14px; border-radius:20px; background:transparent; border:1px dashed var(--pink-dark); color:var(--pink-dark); font-size:13px; cursor:pointer; }
-        .remove-target-btn { margin-left:auto; color:var(--danger); background:transparent; border:none; font-size:20px; cursor:pointer; }
+        .edit-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
 
-        /* 弹窗 & Toast */
-        .modal { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); display:flex; align-items:center; justify-content:center; z-index:100; animation:fadeIn 0.3s ease; }
-        @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
-        .modal-content { width:85%; max-width:350px; background:rgba(255,255,255,0.9); border-radius:30px; padding:30px; backdrop-filter:blur(30px); -webkit-backdrop-filter:blur(30px); border:1px solid rgba(255,255,255,0.8); box-shadow:0 20px 60px rgba(194,24,91,0.3); animation:popIn 0.4s ease; }
-        @keyframes popIn { from{opacity:0; transform:scale(0.8);} to{opacity:1; transform:scale(1);} }
-        .modal-title { font-size:20px; font-weight:700; margin-bottom:15px; color:var(--pink-dark); text-align:center; }
-        .modal-text { font-size:15px; line-height:1.6; margin-bottom:20px; color:var(--text-dark); text-align:center; }
-        .modal-btn { width:100%; padding:14px; border-radius:25px; border:none; background:linear-gradient(135deg, var(--pink-mid), var(--pink-dark)); color:white; font-size:16px; font-weight:600; cursor:pointer; transition:0.2s; }
-        .modal-btn:active { transform:scale(0.95); opacity:0.9; }
-        .toast { position:absolute; top:60px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:12px 24px; border-radius:25px; font-size:14px; z-index:200; animation:toastIn 0.3s ease, toastOut 0.3s ease 2s forwards; pointer-events:none; }
-        @keyframes toastIn { from{opacity:0; transform:translateX(-50%) translateY(-20px);} to{opacity:1; transform:translateX(-50%) translateY(0);} }
-        @keyframes toastOut { from{opacity:1;} to{opacity:0;} }
+        .edit-section {
+            background: var(--glass-bg);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
 
-        .api-status { position:absolute; bottom:10px; right:15px; font-size:11px; color:rgba(90,45,58,0.4); z-index:2; pointer-events:none; }
-        @media (max-width:430px) { .app-shell { max-width:100%; border-radius:0; } }
+        .edit-section h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: var(--pink-dark);
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #7a4b5a;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.5);
+            color: var(--text-dark);
+            font-size: 14px;
+            outline: none;
+            -webkit-user-select: text;
+            user-select: text;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 25px;
+            border: none;
+            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
+            color: white;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: var(--shadow-soft);
+            margin-top: 10px;
+        }
+
+        .save-btn:active {
+            transform: scale(0.95);
+            opacity: 0.9;
+        }
+
+        .target-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .target-tab {
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: var(--glass-bg);
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.2s;
+            border: 1px solid var(--glass-border);
+        }
+
+        .target-tab.active {
+            background: var(--pink-dark);
+            color: white;
+            border-color: var(--pink-dark);
+        }
+
+        .add-target-btn {
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: transparent;
+            border: 1px dashed var(--pink-dark);
+            color: var(--pink-dark);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .remove-target-btn {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            font-size: 14px;
+            cursor: pointer;
+            margin-left: auto;
+            display: block;
+        }
+
+        /* Toast */
+        .toast {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            z-index: 200;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2s forwards;
+            pointer-events: none;
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        @keyframes toastOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .api-status {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 11px;
+            color: rgba(90, 45, 58, 0.4);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        @media (max-width: 430px) {
+            .app-shell {
+                max-width: 100%;
+                border-radius: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -155,27 +660,23 @@
         <div class="unlock-container safe-top safe-bottom">
             <div class="unlock-avatar">💝</div>
             <div class="unlock-title">恋爱模拟器 Pro</div>
-            <div class="pin-input-container" id="pinContainer">
-                <div class="pin-dot" data-index="0"></div>
-                <div class="pin-dot" data-index="1"></div>
-                <div class="pin-dot" data-index="2"></div>
-                <div class="pin-dot" data-index="3"></div>
-                <div class="pin-dot" data-index="4"></div>
-                <div class="pin-dot" data-index="5"></div>
+            <div style="display:flex; gap:12px;" id="pinContainer">
+                <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+                <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
             </div>
             <div class="num-pad">
-                <button class="num-key" onclick="handlePinInput('1')">1</button>
-                <button class="num-key" onclick="handlePinInput('2')">2</button>
-                <button class="num-key" onclick="handlePinInput('3')">3</button>
-                <button class="num-key" onclick="handlePinInput('4')">4</button>
-                <button class="num-key" onclick="handlePinInput('5')">5</button>
-                <button class="num-key" onclick="handlePinInput('6')">6</button>
-                <button class="num-key" onclick="handlePinInput('7')">7</button>
-                <button class="num-key" onclick="handlePinInput('8')">8</button>
-                <button class="num-key" onclick="handlePinInput('9')">9</button>
-                <button class="num-key special" onclick="handlePinInput('clear')">清除</button>
-                <button class="num-key" onclick="handlePinInput('0')">0</button>
-                <button class="num-key special" onclick="handlePinInput('delete')">删除</button>
+                <button class="num-key" onclick="inputPin('1')">1</button>
+                <button class="num-key" onclick="inputPin('2')">2</button>
+                <button class="num-key" onclick="inputPin('3')">3</button>
+                <button class="num-key" onclick="inputPin('4')">4</button>
+                <button class="num-key" onclick="inputPin('5')">5</button>
+                <button class="num-key" onclick="inputPin('6')">6</button>
+                <button class="num-key" onclick="inputPin('7')">7</button>
+                <button class="num-key" onclick="inputPin('8')">8</button>
+                <button class="num-key" onclick="inputPin('9')">9</button>
+                <button class="num-key special" onclick="inputPin('clear')">清除</button>
+                <button class="num-key" onclick="inputPin('0')">0</button>
+                <button class="num-key special" onclick="inputPin('back')">删除</button>
             </div>
         </div>
     </div>
@@ -183,42 +684,42 @@
     <!-- 主页 -->
     <div class="page" id="homePage">
         <div class="home-header safe-top">
-            <button class="header-btn" onclick="switchToPage('editPage')">📝 人设</button>
-            <div style="display:flex; align-items:center;">
-                <span style="font-weight:600; font-size:16px;">💕 恋爱日常</span>
-                <span class="current-target-badge" id="currentTargetBadge" onclick="switchTarget()">
-                    <span id="currentTargetName">沈瑜</span> 🔄
+            <button class="header-btn" onclick="switchPage('editPage')">📝 人设</button>
+            <div style="display:flex; align-items:center; gap:5px;">
+                <span style="font-weight:600;">💕 恋爱日常</span>
+                <span class="current-target-badge" id="targetBadge" onclick="cycleTarget()">
+                    <span id="targetNameDisplay">沈瑜</span> 🔄
                 </span>
             </div>
-            <button class="header-btn" onclick="switchToPage('menuPage')">☰ 菜单</button>
+            <button class="header-btn" onclick="switchPage('menuPage')">☰ 菜单</button>
         </div>
         <div class="story-view" id="storyView">
-            <div class="story-bubble">欢迎回来 💕<br>今天你想和谁共度时光？点击顶部名字切换角色。</div>
+            <div class="story-bubble">欢迎回来 💕<br><br>今天想和谁共度时光？点击顶部名字旁的 🔄 按钮可以切换互动角色。</div>
         </div>
         <div class="options-bar" id="optionsBar">
-            <button class="option-chip" onclick="handleOption('温柔地回应')">🌸 温柔回应</button>
-            <button class="option-chip" onclick="handleOption('带着试探')">🌙 带着试探</button>
-            <button class="option-chip" onclick="handleOption('保持沉默')">🌱 保持沉默</button>
+            <button class="option-chip" onclick="chooseOption('温柔地回应')">🌸 温柔回应</button>
+            <button class="option-chip" onclick="chooseOption('带着试探')">🌙 带着试探</button>
+            <button class="option-chip" onclick="chooseOption('保持沉默')">🌱 保持沉默</button>
         </div>
         <div class="input-bar safe-bottom">
             <input type="text" class="custom-input" id="customInput" placeholder="输入你的行为或台词..." maxlength="200">
-            <button class="send-btn" onclick="handleCustomInput()">➤</button>
+            <button class="send-btn" onclick="sendCustom()">➤</button>
         </div>
         <div class="api-status" id="apiStatus">⚡ 就绪</div>
     </div>
 
     <!-- 菜单页 -->
-    <div class="page menu-overlay" id="menuPage" onclick="if(event.target===this)switchToPage('homePage')">
+    <div class="page menu-overlay" id="menuPage" onclick="if(event.target===this)switchPage('homePage')">
         <div class="menu-content safe-bottom">
             <div class="menu-grid">
-                <div class="menu-icon-item" onclick="openSocialApp('微信')"><div class="menu-icon">💬</div><span class="menu-label">微信</span></div>
-                <div class="menu-icon-item" onclick="openSocialApp('微博')"><div class="menu-icon">📱</div><span class="menu-label">微博</span></div>
-                <div class="menu-icon-item" onclick="openSocialApp('抖音')"><div class="menu-icon">🎵</div><span class="menu-label">抖音</span></div>
-                <div class="menu-icon-item" onclick="openSocialApp('小红书')"><div class="menu-icon">📕</div><span class="menu-label">小红书</span></div>
-                <div class="menu-icon-item" onclick="openSocialApp('豆瓣')"><div class="menu-icon">📚</div><span class="menu-label">豆瓣</span></div>
-                <div class="menu-icon-item" onclick="openSocialApp('信息')"><div class="menu-icon">✉️</div><span class="menu-label">信息</span></div>
-                <div class="menu-icon-item" onclick="openSocialApp('电话')"><div class="menu-icon">📞</div><span class="menu-label">电话</span></div>
-                <div class="menu-icon-item" onclick="openSocialApp('X')"><div class="menu-icon">🐦</div><span class="menu-label">X</span></div>
+                <div class="menu-icon-item" onclick="openApp('微信')"><div class="menu-icon">💬</div><span class="menu-label">微信</span></div>
+                <div class="menu-icon-item" onclick="openApp('微博')"><div class="menu-icon">📱</div><span class="menu-label">微博</span></div>
+                <div class="menu-icon-item" onclick="openApp('抖音')"><div class="menu-icon">🎵</div><span class="menu-label">抖音</span></div>
+                <div class="menu-icon-item" onclick="openApp('小红书')"><div class="menu-icon">📕</div><span class="menu-label">小红书</span></div>
+                <div class="menu-icon-item" onclick="openApp('豆瓣')"><div class="menu-icon">📚</div><span class="menu-label">豆瓣</span></div>
+                <div class="menu-icon-item" onclick="openApp('短信')"><div class="menu-icon">✉️</div><span class="menu-label">短信</span></div>
+                <div class="menu-icon-item" onclick="openApp('电话')"><div class="menu-icon">📞</div><span class="menu-label">电话</span></div>
+                <div class="menu-icon-item" onclick="openApp('X')"><div class="menu-icon">🐦</div><span class="menu-label">X</span></div>
             </div>
         </div>
     </div>
@@ -226,192 +727,150 @@
     <!-- 社交模拟页 -->
     <div class="page" id="socialPage">
         <div class="app-sim-header safe-top">
-            <span class="back-arrow" onclick="switchToPage('homePage')">←</span>
-            <span class="app-sim-title" id="socialTitle">社交应用</span>
+            <span class="back-arrow" onclick="switchPage('homePage')">←</span>
+            <span class="app-sim-title" id="socialTitle">微信</span>
             <span style="width:24px;"></span>
         </div>
         <div class="app-sim-body" id="socialBody">
-            <div class="chat-msg received">✨ 应用已加载</div>
+            <div class="chat-msg received">✨ 当前对话角色：<span id="socialTargetName"></span></div>
         </div>
         <div class="chat-input-bar safe-bottom">
-            <input type="text" class="custom-input" id="socialInput" placeholder="输入消息..." maxlength="200">
-            <button class="send-btn" onclick="handleSocialSend()">➤</button>
+            <input type="text" class="custom-input" id="socialInput" placeholder="输入消息...">
+            <button class="send-btn" onclick="sendSocialMsg()">➤</button>
         </div>
     </div>
 
     <!-- 编辑页 -->
     <div class="page" id="editPage">
         <div class="home-header safe-top">
-            <button class="header-btn" onclick="switchToPage('homePage')">← 返回</button>
-            <span style="font-weight:600; font-size:16px;">人设编辑中心</span>
+            <button class="header-btn" onclick="switchPage('homePage')">← 返回</button>
+            <span style="font-weight:600;">人设编辑中心</span>
             <span style="width:60px;"></span>
         </div>
         <div class="edit-scroll safe-bottom" id="editScroll">
-            <!-- 全局故事背景 -->
             <div class="edit-section">
                 <h3>🌍 故事背景设定</h3>
-                <div class="form-group">
-                    <label>世界观 / 关系背景</label>
-                    <textarea id="worldSetting" rows="3" placeholder="例如：你们是大学同学，已经暗恋对方半年，最近开始频繁在图书馆相遇...">你们刚刚开始互相了解，关系还处在暧昧阶段。</textarea>
-                </div>
+                <textarea id="worldSetting" rows="4" placeholder="描写你们共同的世界观、关系起源……"></textarea>
             </div>
-
-            <!-- 我的设定 -->
             <div class="edit-section">
                 <h3>👤 我的人设</h3>
-                <div class="form-group"><label>昵称</label><input type="text" id="myName" value="小太阳"></div>
-                <div class="form-group"><label>性格标签</label><input type="text" id="myTrait" value="活泼直白, 慢热, 敏感"></div>
-                <div class="form-group"><label>说话风格</label><input type="text" id="myStyle" value="喜欢用'哈哈'，爱撒娇"></div>
+                <div class="form-group"><label>昵称</label><input id="myName" value="小太阳"></div>
+                <div class="form-group"><label>性格标签</label><input id="myTrait" value="活泼直白, 慢热, 敏感"></div>
+                <div class="form-group"><label>说话风格</label><input id="myStyle" value="喜欢用‘哈哈’，爱撒娇"></div>
                 <div class="form-group"><label>雷点</label><textarea id="myAvoid" rows="2">被冷落, 被欺骗</textarea></div>
             </div>
-
-            <!-- 攻略对象们 -->
             <div class="edit-section">
                 <h3>💕 攻略角色 (<span id="targetCount">1</span>/5)</h3>
-                <div class="target-tabs" id="targetTabs">
-                    <!-- 动态生成 tabs -->
-                </div>
-                <div id="targetEditor" style="margin-top:15px;">
-                    <div class="form-group"><label>姓名</label><input type="text" id="targetName" value="沈瑜"></div>
-                    <div class="form-group"><label>性格偏向</label><input type="text" id="targetTrait" value="占有欲强, 内心缺安全感"></div>
-                    <div class="form-group"><label>说话风格</label><input type="text" id="targetStyle" value="低音炮，试探性，喜欢反问"></div>
-                    <div class="form-group"><label>日常习惯</label><textarea id="targetHabit" rows="2">睡前必问行踪，爱吃醋</textarea></div>
-                    <div class="form-group"><label>角色背景故事</label><textarea id="targetBackstory" rows="3" placeholder="TA的过去、你们之间的特殊回忆...">你们在一次社团活动中认识，他对你一见钟情，但一直不敢表白。</textarea></div>
-                </div>
+                <div class="target-tabs" id="targetTabs"></div>
+                <div class="form-group"><label>姓名</label><input id="tName"></div>
+                <div class="form-group"><label>性格偏向</label><input id="tTrait"></div>
+                <div class="form-group"><label>说话风格</label><input id="tStyle"></div>
+                <div class="form-group"><label>日常习惯</label><textarea id="tHabit" rows="2"></textarea></div>
+                <div class="form-group"><label>角色背景故事</label><textarea id="tBackstory" rows="3" placeholder="TA的过去、你们之间的特殊回忆……"></textarea></div>
+                <button class="remove-target-btn" id="removeTargetBtn" style="display:none;">🗑️ 删除此角色</button>
             </div>
-
-            <!-- API Key 设置 -->
             <div class="edit-section">
-                <h3>🔑 API 设置</h3>
-                <div class="form-group">
-                    <label>DeepSeek API Key</label>
-                    <input type="password" id="apiKeyInput" placeholder="sk-..." value="">
-                    <small style="color:#888; display:block; margin-top:5px;">密钥仅保存在本地浏览器，不会上传</small>
-                </div>
-                <button class="save-btn" onclick="testApiKey()" style="background:linear-gradient(135deg, #74b9ff, #0984e3); margin-bottom:10px;">🔍 测试连接</button>
-                <button class="save-btn" onclick="saveAllSettings()">💾 保存全部设置</button>
+                <h3>🔑 API Key</h3>
+                <input type="password" id="apiKeyInput" placeholder="sk-..." style="width:100%;padding:12px;border-radius:15px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.5);">
+                <small style="color:#888;">仅保存在本地，不会上传</small>
             </div>
+            <button class="save-btn" onclick="saveAll()">💾 保存全部设置</button>
         </div>
     </div>
 </div>
 
-<!-- 弹窗容器 -->
-<div id="modalContainer"></div>
-<!-- Toast容器 -->
 <div id="toastContainer"></div>
 
 <script>
-// ======================================================
-// 🔐 配置与存储
-// ======================================================
-const DEFAULT_API_KEY = 'sk-1f42d87f026a48d2bbff8de4488cb5d0'; // 占位，第一次使用请替换
-
-const Storage = {
-    KEY: 'love_sim_pro_v1',
-    encrypt(data) {
-        try { return btoa(unescape(encodeURIComponent(JSON.stringify(data)))); } catch(e) { return btoa(JSON.stringify(data)); }
-    },
-    decrypt(str) {
-        try { return JSON.parse(decodeURIComponent(escape(atob(str)))); } catch(e) { return JSON.parse(atob(str)); }
-    },
+// ====== 数据存储 ======
+const Store = {
+    KEY: 'love_sim_pro_v2',
     save(data) {
-        try { localStorage.setItem(this.KEY, this.encrypt(data)); return true; } catch(e) { return false; }
+        try { localStorage.setItem(this.KEY, btoa(unescape(encodeURIComponent(JSON.stringify(data))))); } catch(e) {}
     },
     load() {
-        try { const d = localStorage.getItem(this.KEY); return d ? this.decrypt(d) : null; } catch(e) { return null; }
+        try {
+            const raw = localStorage.getItem(this.KEY);
+            return raw ? JSON.parse(decodeURIComponent(escape(atob(raw)))) : null;
+        } catch(e) { return null; }
     }
 };
 
-// 游戏状态
-const GameState = {
+// ====== 全局状态 ======
+const State = {
     pin: '',
     password: '123456',
-    apiKey: DEFAULT_API_KEY,
-    currentTargetIndex: 0,
+    apiKey: 'sk-1f42d87f026a48d2bbff8de4488cb5d0', // ⚠️ 替换这里
+    currentTargetIdx: 0,
     targets: [
-        {
-            name: '沈瑜',
-            trait: '占有欲强, 内心缺安全感',
-            style: '低音炮，试探性，喜欢反问',
-            habit: '睡前必问行踪，爱吃醋',
-            backstory: '你们在一次社团活动中认识，他对你一见钟情，但一直不敢表白。'
-        }
+        { name:'沈瑜', trait:'占有欲强, 内心缺安全感', style:'低音炮，试探性，喜欢反问', habit:'睡前必问行踪，爱吃醋', backstory:'你们在一次社团活动中认识，他对你一见钟情。' }
     ],
     self: {
-        name: '小太阳',
-        trait: '活泼直白, 慢热, 敏感',
-        style: '喜欢用“哈哈”，爱撒娇',
-        avoid: '被冷落, 被欺骗'
+        name:'小太阳', trait:'活泼直白, 慢热, 敏感', style:'喜欢用“哈哈”，爱撒娇', avoid:'被冷落, 被欺骗'
     },
-    worldSetting: '你们刚刚开始互相了解，关系还处在暧昧阶段。',
-    context: '',
+    world: '你们刚刚开始互相了解，关系还处在暧昧阶段。',
+    context: '', // 通用上下文（已废弃，改用每个target的独立上下文）
+    contexts: {}, // 按target index存储独立上下文
     history: [],
 
     init() {
-        const saved = Storage.load();
+        const saved = Store.load();
         if (saved) {
-            this.password = saved.password || this.password;
-            this.apiKey = saved.apiKey || DEFAULT_API_KEY;
-            this.self = saved.self || this.self;
+            this.password = saved.password || '123456';
+            this.apiKey = saved.apiKey || 'sk-你的密钥';
             this.targets = saved.targets || this.targets;
-            this.worldSetting = saved.worldSetting || this.worldSetting;
-            this.context = saved.context || '';
+            this.self = saved.self || this.self;
+            this.world = saved.world || this.world;
+            this.contexts = saved.contexts || {};
             this.history = saved.history || [];
-            this.currentTargetIndex = saved.currentTargetIndex || 0;
+            this.currentTargetIdx = saved.currentTargetIdx || 0;
         }
-        // 确保 API Key 输入框显示当前值
-        document.getElementById('apiKeyInput').value = this.apiKey;
     },
 
     get currentTarget() {
-        return this.targets[this.currentTargetIndex] || this.targets[0];
+        return this.targets[this.currentTargetIdx] || this.targets[0];
+    },
+
+    getContextFor(idx) {
+        return this.contexts[idx] || '';
+    },
+    setContextFor(idx, val) {
+        this.contexts[idx] = val;
     },
 
     persist() {
-        Storage.save({
+        Store.save({
             password: this.password,
             apiKey: this.apiKey,
-            self: this.self,
             targets: this.targets,
-            worldSetting: this.worldSetting,
-            context: this.context,
+            self: this.self,
+            world: this.world,
+            contexts: this.contexts,
             history: this.history.slice(-50),
-            currentTargetIndex: this.currentTargetIndex
+            currentTargetIdx: this.currentTargetIdx
         });
     }
 };
 
-// UI 控制器
+// ====== UI 辅助 ======
 const UI = {
     currentPage: 'unlockPage',
-    switchTo(pageId) {
-        if (this.currentPage === pageId) return;
-        const old = document.getElementById(this.currentPage);
-        const newP = document.getElementById(pageId);
-        if (!newP) return;
-        if (old) old.classList.remove('active');
-        newP.classList.add('active');
-        this.currentPage = pageId;
+    switchPage(id) {
+        if (this.currentPage === id) return;
+        document.getElementById(this.currentPage).classList.remove('active');
+        document.getElementById(id).classList.add('active');
+        this.currentPage = id;
+        if (id === 'editPage') this.refreshEditPage();
+        if (id === 'homePage') this.updateBadge();
     },
-    showModal(title, text, btnText, callback) {
-        const container = document.getElementById('modalContainer');
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.innerHTML = `<div class="modal-content"><div class="modal-title">${title}</div><div class="modal-text">${text}</div><button class="modal-btn">${btnText}</button></div>`;
-        container.appendChild(modal);
-        modal.querySelector('.modal-btn').addEventListener('click', () => { modal.remove(); if(callback) callback(); });
-        modal.addEventListener('click', (e) => { if(e.target === modal) modal.remove(); });
-    },
-    showToast(msg, dur=2500) {
-        const c = document.getElementById('toastContainer');
+    toast(msg, dur=2000) {
         const t = document.createElement('div');
         t.className = 'toast'; t.textContent = msg;
-        c.appendChild(t);
-        setTimeout(() => { if(t.parentNode) t.remove(); }, dur+300);
+        document.getElementById('toastContainer').appendChild(t);
+        setTimeout(() => t.remove(), dur+300);
     },
     appendStory(html) {
         const view = document.getElementById('storyView');
-        if (!view) return;
         const b = document.createElement('div');
         b.className = 'story-bubble';
         b.innerHTML = html;
@@ -419,206 +878,169 @@ const UI = {
         view.scrollTop = view.scrollHeight;
     },
     showLoading() {
-        this.appendStory('<div class="loading-dots"><span></span><span></span><span></span></div> <span style="color:#999;font-size:13px;">AI 思考中...</span>');
+        this.appendStory('<div class="loading-dots"><span></span><span></span><span></span></div> <span style="color:#999;">正在生成剧情…</span>');
     },
     updateOptions(opts) {
         const bar = document.getElementById('optionsBar');
-        if (!bar) return;
-        bar.innerHTML = opts.map(o => `<button class="option-chip" onclick="handleOption('${o.replace(/'/g, "\\'")}')">${o}</button>`).join('');
+        bar.innerHTML = opts.map(o => `<button class="option-chip" onclick="chooseOption('${o.replace(/'/g, "\\'")}')">${o}</button>`).join('');
     },
-    setApiStatus(t) { const el = document.getElementById('apiStatus'); if(el) el.textContent = t; },
-    updateTargetBadge() {
-        const t = GameState.currentTarget;
-        document.getElementById('currentTargetName').textContent = t.name;
+    setApiStatus(s) {
+        document.getElementById('apiStatus').textContent = s;
+    },
+    updateBadge() {
+        document.getElementById('targetNameDisplay').textContent = State.currentTarget.name;
+    },
+    refreshEditPage() {
+        // 填充表单
+        document.getElementById('worldSetting').value = State.world;
+        document.getElementById('myName').value = State.self.name;
+        document.getElementById('myTrait').value = State.self.trait;
+        document.getElementById('myStyle').value = State.self.style;
+        document.getElementById('myAvoid').value = State.self.avoid;
+        document.getElementById('apiKeyInput').value = State.apiKey;
+        this.renderTargetTabs();
+        this.fillTargetEditor();
     },
     renderTargetTabs() {
         const container = document.getElementById('targetTabs');
-        if (!container) return;
         let html = '';
-        GameState.targets.forEach((t, i) => {
-            html += `<span class="target-tab ${i === GameState.currentTargetIndex ? 'active' : ''}" onclick="switchEditTarget(${i})">${t.name || '新角色'}</span>`;
+        State.targets.forEach((t, i) => {
+            html += `<span class="target-tab ${i===State.currentTargetIdx?'active':''}" onclick="switchEditTarget(${i})">${t.name||'新角色'}</span>`;
         });
-        if (GameState.targets.length < 5) {
-            html += `<span class="add-target-btn" onclick="addTarget()">+ 添加</span>`;
-        }
+        if (State.targets.length < 5) html += '<span class="add-target-btn" onclick="addTarget()">+ 添加</span>';
         container.innerHTML = html;
-        document.getElementById('targetCount').textContent = GameState.targets.length;
+        document.getElementById('targetCount').textContent = State.targets.length;
     },
     fillTargetEditor() {
-        const t = GameState.currentTarget;
-        document.getElementById('targetName').value = t.name || '';
-        document.getElementById('targetTrait').value = t.trait || '';
-        document.getElementById('targetStyle').value = t.style || '';
-        document.getElementById('targetHabit').value = t.habit || '';
-        document.getElementById('targetBackstory').value = t.backstory || '';
+        const t = State.currentTarget;
+        document.getElementById('tName').value = t.name || '';
+        document.getElementById('tTrait').value = t.trait || '';
+        document.getElementById('tStyle').value = t.style || '';
+        document.getElementById('tHabit').value = t.habit || '';
+        document.getElementById('tBackstory').value = t.backstory || '';
+        document.getElementById('removeTargetBtn').style.display = State.targets.length > 1 ? 'block' : 'none';
     }
 };
 
-// 密码相关
-function handlePinInput(val) {
-    if (val === 'clear') GameState.pin = '';
-    else if (val === 'delete') GameState.pin = GameState.pin.slice(0, -1);
-    else { if (GameState.pin.length >= 6) return; GameState.pin += val; }
-    updatePinDisplay();
-    if (GameState.pin.length === 6) setTimeout(verifyPin, 200);
+// ====== 解锁逻辑 ======
+function inputPin(val) {
+    if (val === 'clear') State.pin = '';
+    else if (val === 'back') State.pin = State.pin.slice(0,-1);
+    else { if (State.pin.length>=6) return; State.pin += val; }
+    updateDots();
+    if (State.pin.length === 6) setTimeout(checkPin, 200);
 }
-function updatePinDisplay() {
-    document.querySelectorAll('.pin-dot').forEach((d, i) => {
-        d.textContent = i < GameState.pin.length ? '●' : '';
-        d.classList.toggle('filled', i < GameState.pin.length);
-        d.classList.toggle('active', i === GameState.pin.length);
+function updateDots() {
+    const dots = document.querySelectorAll('#pinContainer .pin-dot');
+    dots.forEach((d,i) => {
+        d.textContent = i<State.pin.length ? '●' : '';
+        d.classList.toggle('filled', i<State.pin.length);
+        d.classList.toggle('active', i===State.pin.length);
     });
 }
-function verifyPin() {
-    if (GameState.pin === GameState.password) {
-        GameState.pin = ''; updatePinDisplay();
-        UI.switchTo('homePage');
-        if (!GameState.context) generateAIResponse('开始新的一天');
+function checkPin() {
+    if (State.pin === State.password) {
+        State.pin = ''; updateDots();
+        UI.switchPage('homePage');
+        if (!State.getContextFor(State.currentTargetIdx)) {
+            setTimeout(() => generate('开始新的一天'), 400);
+        }
     } else {
-        GameState.pin = ''; updatePinDisplay();
-        UI.showToast('密码错误');
+        State.pin = ''; updateDots();
+        UI.toast('密码错误');
         if (navigator.vibrate) navigator.vibrate([50,50,50]);
     }
 }
 
-// 切换攻略对象
-function switchTarget() {
-    if (GameState.targets.length <= 1) return;
-    GameState.currentTargetIndex = (GameState.currentTargetIndex + 1) % GameState.targets.length;
-    GameState.persist();
-    UI.updateTargetBadge();
-    UI.showToast(`当前角色：${GameState.currentTarget.name}`);
+// ====== 主页交互 ======
+function cycleTarget() {
+    if (State.targets.length <= 1) return;
+    State.currentTargetIdx = (State.currentTargetIdx + 1) % State.targets.length;
+    State.persist();
+    UI.updateBadge();
+    UI.toast(`当前角色：${State.currentTarget.name}`);
+}
+function chooseOption(opt) {
+    generate(`玩家选择了：${opt}`);
+}
+function sendCustom() {
+    const inp = document.getElementById('customInput');
+    const text = inp.value.trim();
+    if (!text) return;
+    inp.value = '';
+    UI.appendStory(`<b>你：</b>${text}`);
+    generate(`玩家：${text}`);
 }
 
-// 编辑页：切换编辑中的对象
-function switchEditTarget(index) {
-    GameState.currentTargetIndex = index;
-    UI.renderTargetTabs();
-    UI.fillTargetEditor();
-}
-function addTarget() {
-    if (GameState.targets.length >= 5) return;
-    GameState.targets.push({ name: '新角色', trait: '', style: '', habit: '', backstory: '' });
-    GameState.currentTargetIndex = GameState.targets.length - 1;
-    UI.renderTargetTabs();
-    UI.fillTargetEditor();
-}
-function removeCurrentTarget() {
-    if (GameState.targets.length <= 1) return UI.showToast('至少保留一个角色');
-    GameState.targets.splice(GameState.currentTargetIndex, 1);
-    GameState.currentTargetIndex = Math.min(GameState.currentTargetIndex, GameState.targets.length - 1);
-    UI.renderTargetTabs();
-    UI.fillTargetEditor();
-}
-
-// 保存所有设置
-function saveAllSettings() {
-    // 读取表单
-    GameState.apiKey = document.getElementById('apiKeyInput').value.trim();
-    GameState.self.name = document.getElementById('myName').value || '小太阳';
-    GameState.self.trait = document.getElementById('myTrait').value || '';
-    GameState.self.style = document.getElementById('myStyle').value || '';
-    GameState.self.avoid = document.getElementById('myAvoid').value || '';
-    GameState.worldSetting = document.getElementById('worldSetting').value || '';
-
-    // 读取当前编辑的目标
-    const t = GameState.currentTarget;
-    t.name = document.getElementById('targetName').value || '未命名';
-    t.trait = document.getElementById('targetTrait').value || '';
-    t.style = document.getElementById('targetStyle').value || '';
-    t.habit = document.getElementById('targetHabit').value || '';
-    t.backstory = document.getElementById('targetBackstory').value || '';
-
-    GameState.persist();
-    UI.updateTargetBadge();
-    UI.showToast('✅ 全部设置已保存！');
-    setTimeout(() => UI.switchTo('homePage'), 800);
-}
-
-// API Key 测试
-async function testApiKey() {
-    const key = document.getElementById('apiKeyInput').value.trim();
-    if (!key || key === DEFAULT_API_KEY || key.includes('你的密钥')) {
-        UI.showToast('❌ 请输入有效的 API Key');
-        return;
-    }
-    UI.showToast('⏳ 正在测试连接...');
-    try {
-        const resp = await fetch('https://api.deepseek.com/v1/models', {
-            headers: { 'Authorization': `Bearer ${key}` }
-        });
-        if (resp.ok) {
-            UI.showToast('✅ 连接成功！API Key 有效');
-        } else {
-            const err = await resp.json().catch(()=>({}));
-            UI.showToast(`❌ 验证失败：${err.error?.message || resp.status}`);
-        }
-    } catch(e) {
-        UI.showToast(`❌ 网络错误：${e.message}`);
-    }
-}
-
-// AI 核心
-async function generateAIResponse(userAction) {
-    const key = GameState.apiKey;
-    if (!key || key === DEFAULT_API_KEY || key.includes('你的密钥')) {
-        UI.appendStory('⚠️ <b>API Key 未配置</b><br>请进入「人设编辑中心」→ 底部 API 设置，输入你的 DeepSeek Key 并测试连接。');
+// ====== AI 生成 ======
+async function generate(action) {
+    const key = State.apiKey;
+    if (!key || key === 'sk-你的密钥' || key.includes('xxx')) {
+        UI.appendStory('⚠️ 请先进入「人设编辑中心」设置你的 DeepSeek API Key。');
         return;
     }
     UI.showLoading();
     UI.setApiStatus('⚡ 请求中...');
 
-    const self = GameState.self;
-    const target = GameState.currentTarget;
-    const world = GameState.worldSetting;
+    const self = State.self;
+    const target = State.currentTarget;
+    const world = State.world;
+    const idx = State.currentTargetIdx;
+    const context = State.getContextFor(idx) || '故事刚刚开始';
 
-    const systemPrompt = `你是一个沉浸式恋爱模拟器，严格基于以下设定生成剧情。
+    const system = `你是一个沉浸式恋爱模拟器，擅长描写细腻、真实的情感互动。
 
-【故事背景】
+【世界观与故事背景】
 ${world}
 
-【玩家】
+【玩家信息】
 昵称：${self.name}
 性格：${self.trait}
-风格：${self.style}
+说话风格：${self.style}
 雷点：${self.avoid}
 
-【当前互动角色】
+【当前互动对象】
 姓名：${target.name}
 性格：${target.trait}
-风格：${target.style}
+说话风格：${target.style}
 习惯：${target.habit}
-背景：${target.backstory}
+背景故事：${target.backstory}
 
-【规则】
-1. 对话和情节必须贴合以上所有设定。
-2. 偶尔可插入安全事件（格式：##EVENT## 描述）。
-3. 每次回复末尾提供3个选项，格式为：
-   选项A：...
-   选项B：...
-   选项C：...
-4. 回复控制在300字内，细腻有画面感。`;
+【写作要求】
+1. 你必须输出**大段细腻的文字描写**，包括环境、动作、心理、对话，营造沉浸式体验，**不少于250字**。
+2. 严格基于以上所有人设和背景，让角色行为符合设定。
+3. 偶尔可插入安全事件提醒（格式：##EVENT## 事件描述），例如异地登录警告。
+4. 回复末尾必须提供3个选项，格式：
+   选项A：……
+   选项B：……
+   选项C：……`;
 
-    const userPrompt = `当前关系：${GameState.context || '刚开始'}
-玩家动作：${userAction}`;
+    const user = `当前关系进展：${context}
+玩家动作：${action}
+请生成接下来的剧情。`;
 
     try {
         const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+            headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${key}` },
             body: JSON.stringify({
                 model: 'deepseek-chat',
                 messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt }
+                    { role:'system', content: system },
+                    { role:'user', content: user }
                 ],
-                max_tokens: 600, temperature: 0.85
+                max_tokens: 800,
+                temperature: 0.9
             })
         });
+        if (!resp.ok) {
+            const err = await resp.json().catch(()=>({}));
+            throw new Error(err.error?.message || `HTTP ${resp.status}`);
+        }
         const data = await resp.json();
-        if (!resp.ok) throw new Error(data.error?.message || `HTTP ${resp.status}`);
-
         let content = data.choices[0].message.content;
+
+        // 提取事件
         let eventText = null;
         if (content.includes('##EVENT##')) {
             const parts = content.split('##EVENT##');
@@ -626,118 +1048,142 @@ ${world}
             eventText = parts[1]?.trim();
         }
 
-        const optionRegex = /选项([ABC])[：:]\s*(.+)/g;
+        // 提取选项
+        const optRegex = /选项([ABC])[：:]\s*(.+)/g;
         const options = [];
         let mainText = content;
         let m;
-        while ((m = optionRegex.exec(content)) !== null) options.push(`${m[1]}: ${m[2].trim()}`);
+        while ((m = optRegex.exec(content)) !== null) options.push(`${m[1]}: ${m[2].trim()}`);
         if (options.length > 0) mainText = content.split(/选项[ABC][：:]/)[0].trim();
 
-        // 移除 loading
+        // 移除loading气泡
         const view = document.getElementById('storyView');
-        if (view) {
-            const bubbles = view.querySelectorAll('.story-bubble');
-            const last = bubbles[bubbles.length-1];
-            if (last?.querySelector('.loading-dots')) last.remove();
-        }
+        const bubbles = view.querySelectorAll('.story-bubble');
+        const last = bubbles[bubbles.length-1];
+        if (last?.querySelector('.loading-dots')) last.remove();
 
+        // 显示大段文字
         UI.appendStory(mainText.replace(/\n/g, '<br>'));
-        UI.updateOptions(options.length ? options : ['继续聊天', '换个话题', '看看反应']);
 
+        // 更新选项
+        if (options.length) UI.updateOptions(options);
+        else UI.updateOptions(['继续聊天', '换个话题', '看看反应']);
+
+        // 处理安全事件
         if (eventText) {
             setTimeout(() => {
-                UI.showModal('📱 安全提醒', eventText, '查看', () => generateAIResponse('查看安全事件'));
-            }, 1000);
+                if (confirm(`📱 安全提醒\n\n${eventText}\n\n是否继续剧情？`)) {
+                    generate('玩家查看了安全提醒');
+                }
+            }, 800);
         }
 
-        GameState.context = '关系在发展';
-        GameState.history.push({ action: userAction, time: Date.now() });
-        GameState.persist();
-        UI.setApiStatus('✅ 已响应');
+        // 更新独立上下文
+        State.setContextFor(idx, '关系正按照剧情发展');
+        State.history.push({ action, time: Date.now() });
+        State.persist();
+        UI.setApiStatus('✅ 完成');
     } catch(e) {
         const view = document.getElementById('storyView');
-        if (view) {
-            const bubbles = view.querySelectorAll('.story-bubble');
-            const last = bubbles[bubbles.length-1];
-            if (last?.querySelector('.loading-dots')) last.remove();
-        }
-        UI.appendStory(`❌ <b>请求失败</b><br><small>${e.message}</small><br>请检查 API Key 是否正确（编辑页底部可测试）。`);
+        const bubbles = view.querySelectorAll('.story-bubble');
+        const last = bubbles[bubbles.length-1];
+        if (last?.querySelector('.loading-dots')) last.remove();
+        UI.appendStory(`❌ 请求失败：${e.message}<br>请检查 API Key 是否正确。`);
         UI.setApiStatus('❌ 错误');
     }
 }
 
-function handleOption(opt) { generateAIResponse(`玩家选择了：${opt}`); }
-function handleCustomInput() {
-    const inp = document.getElementById('customInput');
-    const text = inp.value.trim();
-    if (!text) return;
-    inp.value = '';
-    UI.appendStory(`<b>你：</b>${text}`);
-    generateAIResponse(`玩家：${text}`);
-}
-
-// 社交应用
-function openSocialApp(name) {
+// ====== 社交应用 ======
+function openApp(name) {
     document.getElementById('socialTitle').textContent = name;
-    const body = document.getElementById('socialBody');
-    body.innerHTML = `<div class="chat-msg received">✨ ${name} 已加载</div>
-        <div class="chat-msg received">当前角色：${GameState.currentTarget.name}</div>`;
-    UI.switchTo('socialPage');
+    document.getElementById('socialTargetName').textContent = State.currentTarget.name;
+    document.getElementById('socialBody').innerHTML = `<div class="chat-msg received">✨ ${name} - 与 ${State.currentTarget.name} 的对话</div>`;
+    UI.switchPage('socialPage');
 }
-function handleSocialSend() {
+function sendSocialMsg() {
     const inp = document.getElementById('socialInput');
     const text = inp.value.trim();
     if (!text) return;
-    UI.appendSocialMessage(text, true);
-    inp.value = '';
-    setTimeout(() => {
-        const replies = ['嗯', '今天怎么样？', '想你了', '好的'];
-        UI.appendSocialMessage(replies[Math.floor(Math.random()*replies.length)], false);
-    }, 800);
-}
-UI.appendSocialMessage = function(text, isSent) {
     const body = document.getElementById('socialBody');
-    if (!body) return;
     const msg = document.createElement('div');
-    msg.className = `chat-msg ${isSent ? 'sent' : 'received'}`;
+    msg.className = 'chat-msg sent';
     msg.textContent = text;
     body.appendChild(msg);
+    inp.value = '';
     body.scrollTop = body.scrollHeight;
-};
+    // 模拟回复
+    setTimeout(() => {
+        const replies = ['嗯。', '今天怎么样？', '我有点想你了…', '好的。'];
+        const reply = document.createElement('div');
+        reply.className = 'chat-msg received';
+        reply.textContent = replies[Math.floor(Math.random()*replies.length)];
+        body.appendChild(reply);
+        body.scrollTop = body.scrollHeight;
+    }, 600 + Math.random()*1200);
+}
 
-// 初始化
-function init() {
-    GameState.init();
-    updatePinDisplay();
-    UI.updateTargetBadge();
+// ====== 编辑页逻辑 ======
+function switchEditTarget(idx) {
+    State.currentTargetIdx = idx;
     UI.renderTargetTabs();
     UI.fillTargetEditor();
-    // 键盘支持
-    document.addEventListener('keydown', (e) => {
-        if (UI.currentPage === 'unlockPage') {
-            if (e.key >= '0' && e.key <= '9') handlePinInput(e.key);
-            else if (e.key === 'Backspace') handlePinInput('delete');
-        }
-    });
-    document.getElementById('editScroll').insertAdjacentHTML('beforeend',
-        '<div style="text-align:right; margin-top:10px;"><button class="remove-target-btn" onclick="removeCurrentTarget()">🗑️ 删除当前角色</button></div>');
 }
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-else init();
+function addTarget() {
+    if (State.targets.length >= 5) return;
+    State.targets.push({ name:'新角色', trait:'', style:'', habit:'', backstory:'' });
+    State.currentTargetIdx = State.targets.length - 1;
+    UI.renderTargetTabs();
+    UI.fillTargetEditor();
+}
+function removeCurrentTarget() {
+    if (State.targets.length <= 1) return;
+    State.targets.splice(State.currentTargetIdx, 1);
+    State.currentTargetIdx = Math.min(State.currentTargetIdx, State.targets.length-1);
+    UI.renderTargetTabs();
+    UI.fillTargetEditor();
+    UI.toast('角色已删除');
+}
+document.getElementById('removeTargetBtn').addEventListener('click', removeCurrentTarget);
 
-// 导出到全局
-window.switchToPage = UI.switchTo.bind(UI);
-window.handleOption = handleOption;
-window.handleCustomInput = handleCustomInput;
-window.openSocialApp = openSocialApp;
-window.handleSocialSend = handleSocialSend;
-window.saveAllSettings = saveAllSettings;
-window.testApiKey = testApiKey;
-window.handlePinInput = handlePinInput;
-window.switchTarget = switchTarget;
+function saveAll() {
+    State.apiKey = document.getElementById('apiKeyInput').value.trim();
+    State.world = document.getElementById('worldSetting').value;
+    State.self.name = document.getElementById('myName').value || '你';
+    State.self.trait = document.getElementById('myTrait').value;
+    State.self.style = document.getElementById('myStyle').value;
+    State.self.avoid = document.getElementById('myAvoid').value;
+    // 保存当前编辑的目标
+    const t = State.currentTarget;
+    t.name = document.getElementById('tName').value || '未命名';
+    t.trait = document.getElementById('tTrait').value;
+    t.style = document.getElementById('tStyle').value;
+    t.habit = document.getElementById('tHabit').value;
+    t.backstory = document.getElementById('tBackstory').value;
+    State.persist();
+    UI.updateBadge();
+    UI.toast('✅ 全部设置已保存！');
+    setTimeout(() => UI.switchPage('homePage'), 600);
+}
+
+// ====== 初始化 ======
+State.init();
+UI.updateBadge();
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => {
+    UI.refreshEditPage();
+});
+else UI.refreshEditPage();
+
+// 导出函数到全局
+window.switchPage = UI.switchPage.bind(UI);
+window.chooseOption = chooseOption;
+window.sendCustom = sendCustom;
+window.openApp = openApp;
+window.sendSocialMsg = sendSocialMsg;
+window.cycleTarget = cycleTarget;
 window.switchEditTarget = switchEditTarget;
 window.addTarget = addTarget;
-window.removeCurrentTarget = removeCurrentTarget;
+window.saveAll = saveAll;
+window.inputPin = inputPin;
 </script>
 </body>
 </html>
