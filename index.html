@@ -16,643 +16,146 @@
             --glass-border: rgba(255, 255, 255, 0.35);
             --text-dark: #5a2d3a;
             --shadow-soft: 0 8px 32px rgba(194, 24, 91, 0.15);
+            --bubble-user: #c2185b;
+            --bubble-ai: rgba(255, 255, 255, 0.4);
         }
-
         * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            margin: 0; padding: 0; box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-            -webkit-user-select: none;
-            user-select: none;
+            -webkit-user-select: none; user-select: none;
         }
-
         body {
             background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 50%, #f48fb1 100%);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            height: -webkit-fill-available;
-            color: var(--text-dark);
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            left: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; height: -webkit-fill-available;
+            color: var(--text-dark); overflow: hidden;
+            position: fixed; width: 100%; top: 0; left: 0;
         }
-
         .app-shell {
-            position: relative;
-            width: 100%;
-            max-width: 430px;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 20px 60px rgba(255, 182, 193, 0.4),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+            position: relative; width: 100%; max-width: 430px; height: 100%;
+            background: rgba(255,255,255,0.2);
+            box-shadow: 0 20px 60px rgba(255,182,193,0.4), inset 0 0 0 1px rgba(255,255,255,0.3);
             overflow: hidden;
         }
-
         .glass-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: absolute; top:0; left:0; width:100%; height:100%;
             backdrop-filter: blur(30px) saturate(180%);
             -webkit-backdrop-filter: blur(30px) saturate(180%);
-            background: rgba(255, 255, 255, 0.1);
-            pointer-events: none;
+            background: rgba(255,255,255,0.1); pointer-events: none;
         }
+        @supports not (backdrop-filter: blur(1px)) { .glass-layer { background: rgba(255,255,255,0.5); } }
 
-        @supports not (backdrop-filter: blur(1px)) {
-            .glass-layer {
-                background: rgba(255, 255, 255, 0.5);
-            }
-        }
+        .page { position:absolute; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; opacity:0; transform:translateY(10px); transition:0.35s ease; pointer-events:none; z-index:1; }
+        .page.active { opacity:1; transform:translateY(0); pointer-events:auto; }
+        .safe-top { padding-top: env(safe-area-inset-top, 20px); }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
 
-        .page {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.35s ease, transform 0.35s ease;
-            pointer-events: none;
-            z-index: 1;
+        /* 通知横幅 */
+        .notification-banner {
+            position: absolute; top: 10px; left: 10px; right: 10px; z-index: 300;
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
+            border-radius: 15px; padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none; animation: slideDown 0.4s ease;
+            border: 1px solid rgba(0,0,0,0.1);
         }
-
-        .page.active {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
-
-        .safe-top {
-            padding-top: env(safe-area-inset-top, 20px);
-        }
-
-        .safe-bottom {
-            padding-bottom: env(safe-area-inset-bottom, 20px);
-        }
+        @keyframes slideDown { from{opacity:0; transform:translateY(-20px);} to{opacity:1; transform:translateY(0);} }
+        .notification-content { display:flex; justify-content:space-between; align-items:center; }
+        .notification-text { font-size:14px; font-weight:500; }
+        .notification-close { background:none; border:none; font-size:18px; cursor:pointer; color:#999; }
 
         /* 解锁页 */
-        .unlock-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            padding: 40px;
-            gap: 30px;
-        }
-
-        .unlock-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 50px;
-            box-shadow: var(--shadow-soft);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .unlock-title {
-            font-size: 28px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--pink-dark), #880e4f);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .pin-dot {
-            width: 48px;
-            height: 48px;
-            border-radius: 16px;
-            background: var(--glass-bg);
-            border: 2px solid var(--glass-border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-
-        .pin-dot.filled {
-            background: rgba(194, 24, 91, 0.2);
-            border-color: var(--pink-dark);
-        }
-
-        .pin-dot.active {
-            border-color: var(--pink-dark);
-            box-shadow: 0 0 20px rgba(194, 24, 91, 0.3);
-        }
-
-        .num-pad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            width: 100%;
-            max-width: 280px;
-        }
-
-        .num-key {
-            aspect-ratio: 1;
-            border-radius: 20px;
-            border: none;
-            background: var(--glass-bg);
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--text-dark);
-            cursor: pointer;
-            transition: 0.15s;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .num-key:active {
-            transform: scale(0.9);
-            background: rgba(194, 24, 91, 0.3);
-        }
-
-        .num-key.special {
-            background: transparent;
-            font-size: 16px;
-            color: #999;
-        }
+        .unlock-container { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding:40px; gap:30px; }
+        .unlock-avatar { width:100px; height:100px; border-radius:50%; background:linear-gradient(135deg, var(--pink-mid), var(--pink-dark)); display:flex; align-items:center; justify-content:center; font-size:50px; box-shadow:var(--shadow-soft); animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.05); } }
+        .unlock-title { font-size:28px; font-weight:700; background:linear-gradient(135deg, var(--pink-dark), #880e4f); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .pin-dot { width:48px; height:48px; border-radius:16px; background:var(--glass-bg); border:2px solid var(--glass-border); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; transition:0.3s; }
+        .pin-dot.filled { background:rgba(194,24,91,0.2); border-color:var(--pink-dark); }
+        .pin-dot.active { border-color:var(--pink-dark); box-shadow:0 0 20px rgba(194,24,91,0.3); }
+        .num-pad { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; width:100%; max-width:280px; }
+        .num-key { aspect-ratio:1; border-radius:20px; border:none; background:var(--glass-bg); font-size:24px; font-weight:600; color:var(--text-dark); cursor:pointer; transition:0.15s; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; }
+        .num-key:active { transform:scale(0.9); background:rgba(194,24,91,0.3); }
+        .num-key.special { background:transparent; font-size:16px; color:#999; }
 
         /* 主页 */
-        .home-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .header-btn {
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: none;
-            background: var(--glass-bg);
-            color: var(--text-dark);
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        .header-btn:active {
-            transform: scale(0.95);
-            background: rgba(194, 24, 91, 0.2);
-        }
-
-        .story-view {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
-        }
-
-        .story-view::-webkit-scrollbar { display: none; }
-
-        .story-bubble {
-            background: var(--glass-bg);
-            border-radius: 20px;
-            padding: 16px;
-            margin-bottom: 12px;
-            animation: fadeInUp 0.4s ease;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            line-height: 1.7;
-            font-size: 15px;
-            white-space: pre-wrap;
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .loading-dots {
-            display: inline-flex;
-            gap: 4px;
-        }
-
-        .loading-dots span {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--pink-dark);
-            animation: dotBounce 1.4s infinite;
-        }
-
-        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes dotBounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
-
-        .options-bar {
-            display: flex;
-            gap: 10px;
-            padding: 12px 20px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .options-bar::-webkit-scrollbar { display: none; }
-
-        .option-chip {
-            flex-shrink: 0;
-            padding: 10px 18px;
-            border-radius: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            background: var(--glass-bg);
-            color: var(--text-dark);
-            font-size: 14px;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: 0.2s;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        .option-chip:active {
-            background: rgba(194, 24, 91, 0.3);
-            transform: scale(0.95);
-        }
-
-        .input-bar {
-            display: flex;
-            gap: 10px;
-            padding: 12px 20px 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .custom-input {
-            flex: 1;
-            padding: 12px 20px;
-            border-radius: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            background: var(--glass-bg);
-            color: var(--text-dark);
-            font-size: 15px;
-            outline: none;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            -webkit-user-select: text;
-            user-select: text;
-        }
-
-        .custom-input::placeholder {
-            color: rgba(90, 45, 58, 0.4);
-        }
-
-        .send-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: none;
-            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            transition: 0.2s;
-            flex-shrink: 0;
-        }
-
-        .send-btn:active {
-            transform: scale(0.9);
-        }
+        .home-header { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; border-bottom:1px solid rgba(255,255,255,0.2); }
+        .header-btn { padding:8px 16px; border-radius:20px; border:none; background:var(--glass-bg); color:var(--text-dark); font-size:14px; font-weight:500; cursor:pointer; transition:0.2s; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+        .header-btn:active { transform:scale(0.95); background:rgba(194,24,91,0.2); }
+        .story-view { flex:1; overflow-y:auto; padding:20px; -webkit-overflow-scrolling:touch; }
+        .story-view::-webkit-scrollbar { display:none; }
+        .story-bubble { max-width:85%; padding:12px 16px; border-radius:20px; margin-bottom:15px; animation:fadeInUp 0.3s ease; line-height:1.6; font-size:15px; position:relative; }
+        .story-bubble.user { margin-left:auto; background:var(--bubble-user); color:white; border-bottom-right-radius:5px; text-align:right; }
+        .story-bubble.ai { margin-right:auto; background:var(--bubble-ai); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom-left-radius:5px; }
+        .bubble-actions { display:flex; gap:5px; margin-top:8px; justify-content:flex-end; }
+        .bubble-action-btn { background:rgba(255,255,255,0.3); border:none; border-radius:10px; padding:2px 8px; font-size:12px; cursor:pointer; color:var(--text-dark); }
+        @keyframes fadeInUp { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+        .options-bar { display:flex; gap:10px; padding:12px 20px; overflow-x:auto; border-top:1px solid rgba(255,255,255,0.2); }
+        .options-bar::-webkit-scrollbar { display:none; }
+        .option-chip { flex-shrink:0; padding:10px 18px; border-radius:25px; border:1px solid rgba(255,255,255,0.3); background:var(--glass-bg); color:var(--text-dark); font-size:14px; white-space:nowrap; cursor:pointer; transition:0.2s; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+        .option-chip:active { background:rgba(194,24,91,0.3); transform:scale(0.95); }
+        .input-bar { display:flex; gap:10px; padding:12px 20px 20px; border-top:1px solid rgba(255,255,255,0.2); }
+        .custom-input { flex:1; padding:12px 20px; border-radius:25px; border:1px solid rgba(255,255,255,0.3); background:var(--glass-bg); color:var(--text-dark); font-size:15px; outline:none; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); -webkit-user-select:text; user-select:text; }
+        .send-btn { width:48px; height:48px; border-radius:50%; border:none; background:linear-gradient(135deg, var(--pink-mid), var(--pink-dark)); color:white; font-size:20px; cursor:pointer; transition:0.2s; flex-shrink:0; }
+        .send-btn:active { transform:scale(0.9); }
+        .correction-bar { display:flex; gap:5px; padding:8px 20px; }
+        .correction-input { flex:1; padding:8px 12px; border-radius:15px; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.4); font-size:13px; }
+        .correction-btn { background:var(--pink-dark); color:white; border:none; border-radius:15px; padding:6px 12px; font-size:12px; }
 
         /* 菜单 */
-        .menu-overlay {
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-        }
-
-        .menu-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            padding: 20px;
-        }
-
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            background: rgba(255, 255, 255, 0.4);
-            border-radius: 30px;
-            padding: 20px;
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            animation: slideUp 0.4s ease;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(100px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .menu-icon-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            padding: 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .menu-icon-item:active {
-            background: rgba(194, 24, 91, 0.2);
-            transform: scale(0.9);
-        }
-
-        .menu-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        .menu-label {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-dark);
-        }
+        .menu-overlay { background:rgba(0,0,0,0.3); backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); }
+        .menu-content { flex:1; display:flex; flex-direction:column; justify-content:flex-end; padding:20px; }
+        .menu-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; background:rgba(255,255,255,0.4); border-radius:30px; padding:20px; backdrop-filter:blur(30px); -webkit-backdrop-filter:blur(30px); border:1px solid rgba(255,255,255,0.5); animation:slideUp 0.4s ease; }
+        @keyframes slideUp { from{opacity:0; transform:translateY(100px);} to{opacity:1; transform:translateY(0);} }
+        .menu-icon-item { display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px; border-radius:20px; cursor:pointer; transition:0.2s; position:relative; }
+        .menu-icon-item:active { background:rgba(194,24,91,0.2); transform:scale(0.9); }
+        .menu-icon { width:50px; height:50px; border-radius:16px; background:linear-gradient(135deg, var(--pink-mid), var(--pink-dark)); display:flex; align-items:center; justify-content:center; font-size:24px; }
+        .menu-label { font-size:12px; font-weight:500; }
+        .badge { position:absolute; top:0; right:5px; background:red; color:white; border-radius:10px; padding:2px 6px; font-size:10px; display:none; }
 
         /* 社交模拟 */
-        .app-sim-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .back-arrow {
-            font-size: 24px;
-            cursor: pointer;
-            padding: 5px;
-            transition: 0.2s;
-        }
-
-        .back-arrow:active { transform: scale(0.8); }
-
-        .app-sim-title {
-            font-size: 18px;
-            font-weight: 700;
-            flex: 1;
-            text-align: center;
-        }
-
-        .app-sim-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        .chat-msg {
-            max-width: 80%;
-            padding: 12px 18px;
-            border-radius: 20px;
-            margin-bottom: 12px;
-            font-size: 14px;
-            line-height: 1.5;
-            animation: fadeInUp 0.3s ease;
-        }
-
-        .chat-msg.received {
-            background: var(--glass-bg);
-            margin-right: auto;
-            border-bottom-left-radius: 5px;
-        }
-
-        .chat-msg.sent {
-            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
-            color: white;
-            margin-left: auto;
-            border-bottom-right-radius: 5px;
-        }
-
-        .chat-input-bar {
-            display: flex;
-            gap: 10px;
-            padding: 15px 20px 25px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
+        .app-sim-header { display:flex; align-items:center; gap:15px; padding:15px 20px; border-bottom:1px solid rgba(255,255,255,0.2); }
+        .back-arrow { font-size:24px; cursor:pointer; padding:5px; } .back-arrow:active { transform:scale(0.8); }
+        .app-sim-title { font-size:18px; font-weight:700; flex:1; text-align:center; }
+        .app-sim-body { flex:1; overflow-y:auto; padding:20px; }
+        .chat-msg { max-width:80%; padding:12px 16px; border-radius:20px; margin-bottom:12px; font-size:14px; line-height:1.5; }
+        .chat-msg.received { background:var(--glass-bg); margin-right:auto; border-bottom-left-radius:5px; }
+        .chat-msg.sent { background:var(--pink-dark); color:white; margin-left:auto; border-bottom-right-radius:5px; }
+        .chat-input-bar { display:flex; gap:10px; padding:15px 20px 25px; border-top:1px solid rgba(255,255,255,0.2); }
+        .no-access { text-align:center; padding:40px; color:#999; }
 
         /* 编辑页 */
-        .edit-scroll {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            -webkit-overflow-scrolling: touch;
-        }
+        .edit-scroll { flex:1; overflow-y:auto; padding:20px; }
+        .edit-section { background:var(--glass-bg); border-radius:20px; padding:20px; margin-bottom:20px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.2); }
+        .edit-section h3 { font-size:16px; margin-bottom:15px; color:var(--pink-dark); }
+        .form-group { margin-bottom:12px; }
+        .form-group label { display:block; font-size:13px; font-weight:600; margin-bottom:5px; }
+        .form-group input, .form-group textarea { width:100%; padding:12px 16px; border-radius:15px; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.5); color:var(--text-dark); font-size:14px; outline:none; -webkit-user-select:text; user-select:text; font-family:inherit; }
+        .form-group textarea { resize:vertical; min-height:60px; }
+        .save-btn { width:100%; padding:16px; border-radius:25px; border:none; background:linear-gradient(135deg, var(--pink-mid), var(--pink-dark)); color:white; font-size:17px; font-weight:700; cursor:pointer; margin-top:10px; }
+        .target-tabs { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:15px; }
+        .target-tab { padding:6px 14px; border-radius:20px; background:var(--glass-bg); cursor:pointer; font-size:13px; border:1px solid var(--glass-border); }
+        .target-tab.active { background:var(--pink-dark); color:white; }
+        .add-target-btn { padding:6px 14px; border-radius:20px; background:transparent; border:1px dashed var(--pink-dark); color:var(--pink-dark); font-size:13px; cursor:pointer; }
+        .remove-target-btn { background:none; border:none; color:#e74c3c; font-size:14px; cursor:pointer; margin-left:auto; display:block; }
+        .ai-optimize-btn { background:linear-gradient(135deg, #74b9ff, #0984e3); color:white; border:none; padding:8px 16px; border-radius:15px; font-size:13px; cursor:pointer; margin-top:5px; }
 
-        .edit-section {
-            background: var(--glass-bg);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .edit-section h3 {
-            font-size: 16px;
-            margin-bottom: 15px;
-            color: var(--pink-dark);
-        }
-
-        .form-group {
-            margin-bottom: 12px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #7a4b5a;
-            margin-bottom: 5px;
-        }
-
-        .form-group input,
-        .form-group textarea,
-        .form-group select {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.5);
-            color: var(--text-dark);
-            font-size: 14px;
-            outline: none;
-            -webkit-user-select: text;
-            user-select: text;
-            font-family: inherit;
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 60px;
-        }
-
-        .save-btn {
-            width: 100%;
-            padding: 16px;
-            border-radius: 25px;
-            border: none;
-            background: linear-gradient(135deg, var(--pink-mid), var(--pink-dark));
-            color: white;
-            font-size: 17px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.2s;
-            box-shadow: var(--shadow-soft);
-            margin-top: 10px;
-        }
-
-        .save-btn:active {
-            transform: scale(0.95);
-            opacity: 0.9;
-        }
-
-        .target-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .target-tab {
-            padding: 6px 14px;
-            border-radius: 20px;
-            background: var(--glass-bg);
-            cursor: pointer;
-            font-size: 13px;
-            transition: 0.2s;
-            border: 1px solid var(--glass-border);
-        }
-
-        .target-tab.active {
-            background: var(--pink-dark);
-            color: white;
-            border-color: var(--pink-dark);
-        }
-
-        .add-target-btn {
-            padding: 6px 14px;
-            border-radius: 20px;
-            background: transparent;
-            border: 1px dashed var(--pink-dark);
-            color: var(--pink-dark);
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-        .remove-target-btn {
-            background: none;
-            border: none;
-            color: #e74c3c;
-            font-size: 14px;
-            cursor: pointer;
-            margin-left: auto;
-            display: block;
-        }
-
-        .ai-optimize-btn {
-            background: linear-gradient(135deg, #74b9ff, #0984e3);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 15px;
-            font-size: 13px;
-            cursor: pointer;
-            margin-top: 5px;
-        }
-
-        .toast {
-            position: absolute;
-            top: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-size: 14px;
-            z-index: 200;
-            animation: toastIn 0.3s ease, toastOut 0.3s ease 2s forwards;
-            pointer-events: none;
-        }
-
-        @keyframes toastIn {
-            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-            to { opacity: 1; transform: translateX(-50%) translateY(0); }
-        }
-        @keyframes toastOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
-
-        .api-status {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
-            font-size: 11px;
-            color: rgba(90, 45, 58, 0.4);
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        @media (max-width: 430px) {
-            .app-shell {
-                max-width: 100%;
-                border-radius: 0;
-            }
-        }
+        .toast { position:absolute; top:60px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:12px 24px; border-radius:25px; font-size:14px; z-index:200; animation:toastIn 0.3s ease, toastOut 0.3s ease 2s forwards; pointer-events:none; }
+        @keyframes toastIn { from{opacity:0; transform:translateX(-50%) translateY(-20px);} to{opacity:1; transform:translateX(-50%) translateY(0);} }
+        @keyframes toastOut { from{opacity:1;} to{opacity:0;} }
+        .new-msg-indicator { position:absolute; bottom:20px; right:20px; background:var(--pink-dark); color:white; border-radius:20px; padding:6px 14px; font-size:13px; display:none; cursor:pointer; z-index:50; animation:bounce 2s infinite; }
+        @keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
+        @media (max-width:430px) { .app-shell { max-width:100%; border-radius:0; } }
     </style>
 </head>
 <body>
 <div class="app-shell" id="appShell">
     <div class="glass-layer"></div>
+    <div class="notification-banner" id="notification">
+        <div class="notification-content">
+            <span class="notification-text" id="notifText">收到新消息</span>
+            <button class="notification-close" onclick="dismissNotification()">✕</button>
+        </div>
+    </div>
 
     <!-- 解锁页 -->
     <div class="page active" id="unlockPage">
@@ -664,18 +167,10 @@
                 <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
             </div>
             <div class="num-pad">
-                <button class="num-key" onclick="inputPin('1')">1</button>
-                <button class="num-key" onclick="inputPin('2')">2</button>
-                <button class="num-key" onclick="inputPin('3')">3</button>
-                <button class="num-key" onclick="inputPin('4')">4</button>
-                <button class="num-key" onclick="inputPin('5')">5</button>
-                <button class="num-key" onclick="inputPin('6')">6</button>
-                <button class="num-key" onclick="inputPin('7')">7</button>
-                <button class="num-key" onclick="inputPin('8')">8</button>
-                <button class="num-key" onclick="inputPin('9')">9</button>
-                <button class="num-key special" onclick="inputPin('clear')">清除</button>
-                <button class="num-key" onclick="inputPin('0')">0</button>
-                <button class="num-key special" onclick="inputPin('back')">删除</button>
+                <button class="num-key" onclick="inputPin('1')">1</button><button class="num-key" onclick="inputPin('2')">2</button><button class="num-key" onclick="inputPin('3')">3</button>
+                <button class="num-key" onclick="inputPin('4')">4</button><button class="num-key" onclick="inputPin('5')">5</button><button class="num-key" onclick="inputPin('6')">6</button>
+                <button class="num-key" onclick="inputPin('7')">7</button><button class="num-key" onclick="inputPin('8')">8</button><button class="num-key" onclick="inputPin('9')">9</button>
+                <button class="num-key special" onclick="inputPin('clear')">清除</button><button class="num-key" onclick="inputPin('0')">0</button><button class="num-key special" onclick="inputPin('back')">删除</button>
             </div>
         </div>
     </div>
@@ -684,53 +179,39 @@
     <div class="page" id="homePage">
         <div class="home-header safe-top">
             <button class="header-btn" onclick="switchPage('editPage')">📝 人设</button>
-            <span style="font-weight:600; font-size:16px;">💕 恋爱日常</span>
+            <span style="font-weight:600;">💕 恋爱日常</span>
             <button class="header-btn" onclick="switchPage('menuPage')">☰ 菜单</button>
         </div>
-        <div class="story-view" id="storyView">
-            <div class="story-bubble">欢迎回来 💕<br><br>AI 将根据你设定的所有角色和背景，自然地展开多线剧情。无需手动切换对象，他们会自己走进你的故事。</div>
-        </div>
-        <div class="options-bar" id="optionsBar">
-            <button class="option-chip" onclick="chooseOption('温柔地回应')">🌸 温柔回应</button>
-            <button class="option-chip" onclick="chooseOption('带着试探')">🌙 带着试探</button>
-            <button class="option-chip" onclick="chooseOption('保持沉默')">🌱 保持沉默</button>
+        <div class="story-view" id="storyView"></div>
+        <div class="options-bar" id="optionsBar"></div>
+        <div class="correction-bar">
+            <input class="correction-input" id="correctionInput" placeholder="修正指令（风格/逻辑/人称）">
+            <button class="correction-btn" onclick="applyCorrection()">✏️ 修正</button>
         </div>
         <div class="input-bar safe-bottom">
-            <input type="text" class="custom-input" id="customInput" placeholder="输入你的行为或台词...">
+            <input class="custom-input" id="customInput" placeholder="输入你的行为或台词...">
             <button class="send-btn" onclick="sendCustom()">➤</button>
         </div>
-        <div class="api-status" id="apiStatus">⚡ 就绪</div>
+        <div class="new-msg-indicator" id="newMsgIndicator" onclick="scrollToBottom()">↓ 新剧情</div>
     </div>
 
     <!-- 菜单页 -->
     <div class="page menu-overlay" id="menuPage" onclick="if(event.target===this)switchPage('homePage')">
         <div class="menu-content safe-bottom">
-            <div class="menu-grid">
-                <div class="menu-icon-item" onclick="openApp('微信')"><div class="menu-icon">💬</div><span class="menu-label">微信</span></div>
-                <div class="menu-icon-item" onclick="openApp('微博')"><div class="menu-icon">📱</div><span class="menu-label">微博</span></div>
-                <div class="menu-icon-item" onclick="openApp('抖音')"><div class="menu-icon">🎵</div><span class="menu-label">抖音</span></div>
-                <div class="menu-icon-item" onclick="openApp('小红书')"><div class="menu-icon">📕</div><span class="menu-label">小红书</span></div>
-                <div class="menu-icon-item" onclick="openApp('豆瓣')"><div class="menu-icon">📚</div><span class="menu-label">豆瓣</span></div>
-                <div class="menu-icon-item" onclick="openApp('短信')"><div class="menu-icon">✉️</div><span class="menu-label">短信</span></div>
-                <div class="menu-icon-item" onclick="openApp('电话')"><div class="menu-icon">📞</div><span class="menu-label">电话</span></div>
-                <div class="menu-icon-item" onclick="openApp('X')"><div class="menu-icon">🐦</div><span class="menu-label">X</span></div>
-                <div class="menu-icon-item" onclick="logout()"><div class="menu-icon">🚪</div><span class="menu-label">退出</span></div>
-            </div>
+            <div class="menu-grid" id="menuGrid"></div>
         </div>
     </div>
 
     <!-- 社交模拟页 -->
     <div class="page" id="socialPage">
         <div class="app-sim-header safe-top">
-            <span class="back-arrow" onclick="switchPage('homePage')">←</span>
+            <span class="back-arrow" onclick="closeSocialApp()">←</span>
             <span class="app-sim-title" id="socialTitle">微信</span>
             <span style="width:24px;"></span>
         </div>
-        <div class="app-sim-body" id="socialBody">
-            <div class="chat-msg received">✨ 当前对话可能涉及多位角色</div>
-        </div>
+        <div class="app-sim-body" id="socialBody"></div>
         <div class="chat-input-bar safe-bottom">
-            <input type="text" class="custom-input" id="socialInput" placeholder="输入消息...">
+            <input class="custom-input" id="socialInput" placeholder="输入消息...">
             <button class="send-btn" onclick="sendSocialMsg()">➤</button>
         </div>
     </div>
@@ -739,24 +220,20 @@
     <div class="page" id="editPage">
         <div class="home-header safe-top">
             <button class="header-btn" onclick="switchPage('homePage')">← 返回</button>
-            <span style="font-weight:600;">人设编辑中心</span>
-            <span style="width:60px;"></span>
+            <span style="font-weight:600;">人设编辑中心</span><span style="width:60px;"></span>
         </div>
-        <div class="edit-scroll safe-bottom" id="editScroll">
+        <div class="edit-scroll safe-bottom">
+            <div class="edit-section"><h3>🌍 故事背景</h3><textarea id="worldSetting" rows="4"></textarea></div>
             <div class="edit-section">
-                <h3>🌍 故事背景设定</h3>
-                <textarea id="worldSetting" rows="4" placeholder="描述世界观、关系起源……"></textarea>
-            </div>
-            <div class="edit-section">
-                <h3>👤 我的人设</h3>
+                <h3>👤 我的设定</h3>
                 <div class="form-group"><label>昵称</label><input id="myName"></div>
-                <div class="form-group"><label>年龄</label><input id="myAge" type="number" placeholder="25"></div>
-                <div class="form-group"><label>身高(cm)</label><input id="myHeight" placeholder="165"></div>
-                <div class="form-group"><label>体重(kg)</label><input id="myWeight" placeholder="50"></div>
-                <div class="form-group"><label>家庭背景</label><textarea id="myFamily" rows="2" placeholder="父母职业、兄弟姐妹等"></textarea></div>
-                <div class="form-group"><label>教育程度</label><input id="myEdu" placeholder="本科 / 研究生"></div>
-                <div class="form-group"><label>性格标签</label><input id="myTrait"></div>
-                <div class="form-group"><label>说话风格</label><input id="myStyle"></div>
+                <div class="form-group"><label>年龄</label><input id="myAge"></div>
+                <div class="form-group"><label>身高</label><input id="myHeight"></div>
+                <div class="form-group"><label>体重</label><input id="myWeight"></div>
+                <div class="form-group"><label>家庭</label><textarea id="myFamily" rows="2"></textarea></div>
+                <div class="form-group"><label>教育</label><input id="myEdu"></div>
+                <div class="form-group"><label>性格</label><input id="myTrait"></div>
+                <div class="form-group"><label>风格</label><input id="myStyle"></div>
                 <div class="form-group"><label>雷点</label><textarea id="myAvoid" rows="2"></textarea></div>
             </div>
             <div class="edit-section">
@@ -764,137 +241,177 @@
                 <div class="target-tabs" id="targetTabs"></div>
                 <div id="targetEditor">
                     <div class="form-group"><label>姓名</label><input id="tName"></div>
-                    <div class="form-group"><label>年龄</label><input id="tAge" type="number" placeholder="28"></div>
-                    <div class="form-group"><label>身高(cm)</label><input id="tHeight" placeholder="180"></div>
-                    <div class="form-group"><label>体重(kg)</label><input id="tWeight" placeholder="70"></div>
-                    <div class="form-group"><label>家庭背景</label><textarea id="tFamily" rows="2" placeholder="家庭构成、经济状况等"></textarea></div>
-                    <div class="form-group"><label>教育程度</label><input id="tEdu" placeholder="硕士 / 博士"></div>
-                    <div class="form-group"><label>性格偏向</label><input id="tTrait"></div>
-                    <div class="form-group"><label>说话风格</label><input id="tStyle"></div>
-                    <div class="form-group"><label>日常习惯</label><textarea id="tHabit" rows="2"></textarea></div>
-                    <div class="form-group"><label>角色背景故事</label><textarea id="tBackstory" rows="3" placeholder="TA的过去、与你的特殊回忆……"></textarea></div>
-                    <button class="ai-optimize-btn" onclick="aiOptimizeTarget()">🤖 AI 优化此角色</button>
-                    <button class="remove-target-btn" id="removeTargetBtn" style="display:none;">🗑️ 删除此角色</button>
+                    <div class="form-group"><label>年龄</label><input id="tAge"></div>
+                    <div class="form-group"><label>身高</label><input id="tHeight"></div>
+                    <div class="form-group"><label>体重</label><input id="tWeight"></div>
+                    <div class="form-group"><label>家庭</label><textarea id="tFamily" rows="2"></textarea></div>
+                    <div class="form-group"><label>教育</label><input id="tEdu"></div>
+                    <div class="form-group"><label>性格</label><input id="tTrait"></div>
+                    <div class="form-group"><label>风格</label><input id="tStyle"></div>
+                    <div class="form-group"><label>习惯</label><textarea id="tHabit" rows="2"></textarea></div>
+                    <div class="form-group"><label>背景故事</label><textarea id="tBackstory" rows="3"></textarea></div>
+                    <button class="ai-optimize-btn" onclick="aiOptimizeTarget()">🤖 AI优化</button>
+                    <button class="remove-target-btn" id="removeTargetBtn">🗑️ 删除角色</button>
                 </div>
             </div>
-            <div class="edit-section">
-                <h3>🔑 API Key</h3>
-                <input type="password" id="apiKeyInput" placeholder="sk-..." style="width:100%;padding:12px;border-radius:15px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.5);">
-                <small style="color:#888;">仅保存在本地，不会上传</small>
-            </div>
-            <button class="save-btn" onclick="saveAll()">💾 保存全部设置</button>
+            <div class="edit-section"><h3>🔑 API Key</h3><input type="password" id="apiKeyInput" placeholder="sk-..."></div>
+            <button class="save-btn" onclick="saveAll()">💾 保存全部</button>
         </div>
     </div>
 </div>
 <div id="toastContainer"></div>
 
 <script>
+// ========== 存储与状态 ==========
 const Store = {
-    KEY: 'love_pro_final',
-    save(data) { localStorage.setItem(this.KEY, btoa(unescape(encodeURIComponent(JSON.stringify(data))))); },
-    load() { try{ const r=localStorage.getItem(this.KEY); return r?JSON.parse(decodeURIComponent(escape(atob(r)))):null; }catch(e){return null;} }
+    KEY: 'love_pro_final2',
+    save(data) { try { localStorage.setItem(this.KEY, btoa(unescape(encodeURIComponent(JSON.stringify(data))))); } catch(e){} },
+    load() { try { const r=localStorage.getItem(this.KEY); return r?JSON.parse(decodeURIComponent(escape(atob(r)))):null; } catch(e){return null;} }
 };
 
 const State = {
     pin: '', password: '123456', apiKey: 'sk-1f42d87f026a48d2bbff8de4488cb5d0',
-    targets: [],
-    self: {},
-    world: '',
-    context: '',
-    history: [],
+    targets: [], self: {}, world: '', context: '',
+    history: [], // {id, type:'user'|'ai', text, timestamp}
+    contacts: {}, // {角色名: {added:bool, messages:[{from,text,time}]}}
+    unlockedApps: ['短信'], // 初始仅有短信
+    appNotifications: {}, // {appName: count}
     _editIdx: 0,
+
     init() {
         const s = Store.load();
         if (s) {
-            this.password = s.password || '123456';
-            this.apiKey = s.apiKey || 'sk-你的密钥';
-            this.targets = s.targets || this.defaultTargets();
-            this.self = s.self || this.defaultSelf();
-            this.world = s.world || '大学校园，互相暗恋';
-            this.context = s.context || '';
-            this.history = s.history || [];
+            Object.assign(this, s);
         } else {
-            this.targets = this.defaultTargets();
-            this.self = this.defaultSelf();
-            this.world = '大学校园，互相暗恋';
+            this.targets = [{ name:'沈瑜', age:27, height:183, weight:72, family:'独生子', edu:'硕士', trait:'占有欲强', style:'低音炮', habit:'爱吃醋', backstory:'大学学长' }];
+            this.self = { name:'小太阳', age:24, height:162, weight:48, family:'父母和妹妹', edu:'本科', trait:'活泼', style:'爱撒娇', avoid:'被冷落' };
+            this.world = '大学校园';
+            this.contacts = {};
+            this.appNotifications = {};
+            this.unlockedApps = ['短信'];
+            this.history = [];
+            this.context = '';
         }
+        // 确保每个target在contacts中有记录
+        this.targets.forEach(t => { if (!this.contacts[t.name]) this.contacts[t.name] = {added:false, messages:[]}; });
+        // 默认NPC联系人
+        if (!this.contacts['妈妈']) this.contacts['妈妈'] = {added:true, messages:[{from:'妈妈',text:'周末回家吃饭吗？'}]};
+        if (!this.contacts['爸爸']) this.contacts['爸爸'] = {added:true, messages:[]};
+        if (!this.contacts['朋友小王']) this.contacts['朋友小王'] = {added:true, messages:[{from:'朋友小王',text:'最近怎么样？'}]};
     },
-    defaultTargets() { return [{ name:'沈瑜', age:27, height:183, weight:72, family:'独生子，父母经商', edu:'硕士', trait:'占有欲强', style:'低音炮', habit:'爱吃醋', backstory:'大学学长' }]; },
-    defaultSelf() { return { name:'小太阳', age:24, height:162, weight:48, family:'普通家庭，有个妹妹', edu:'本科', trait:'活泼', style:'爱撒娇', avoid:'被冷落' }; },
     persist() {
         Store.save({
             password: this.password, apiKey: this.apiKey,
             targets: this.targets, self: this.self, world: this.world,
-            context: this.context, history: this.history.slice(-100)
+            context: this.context, history: this.history,
+            contacts: this.contacts, unlockedApps: this.unlockedApps,
+            appNotifications: this.appNotifications
         });
     }
 };
 
+// ========== UI ==========
 const UI = {
     currentPage: 'unlockPage',
     switchPage(id) {
-        if (this.currentPage === id) return;
         document.getElementById(this.currentPage).classList.remove('active');
         document.getElementById(id).classList.add('active');
         this.currentPage = id;
         if (id === 'editPage') this.refreshEditPage();
+        if (id === 'menuPage') this.renderMenu();
+        if (id === 'homePage') this.renderHistory();
     },
-    toast(msg, dur=2000) {
+    toast(msg) {
         const t = document.createElement('div'); t.className='toast'; t.textContent=msg;
         document.getElementById('toastContainer').appendChild(t);
-        setTimeout(()=>t.remove(), dur+300);
+        setTimeout(()=>t.remove(), 2000);
     },
-    appendStory(html) {
-        const v = document.getElementById('storyView');
-        const b = document.createElement('div'); b.className='story-bubble'; b.innerHTML=html;
-        v.appendChild(b); v.scrollTop = v.scrollHeight;
+    notify(title) {
+        const banner = document.getElementById('notification');
+        document.getElementById('notifText').textContent = title;
+        banner.style.display = 'block';
+        setTimeout(()=>{ banner.style.display = 'none'; }, 4000);
     },
-    showLoading() { this.appendStory('<div class="loading-dots"><span></span><span></span><span></span></div> <span style="color:#999;">生成剧情…</span>'); },
+    renderMenu() {
+        const apps = ['微信','微博','抖音','小红书','豆瓣','短信','电话','X'];
+        const grid = document.getElementById('menuGrid');
+        grid.innerHTML = apps.map(name => {
+            const unlocked = State.unlockedApps.includes(name);
+            const count = State.appNotifications[name] || 0;
+            return `<div class="menu-icon-item" onclick="${unlocked ? `openApp('${name}')` : `UI.toast('🔒 未解锁')`}" style="${unlocked ? '' : 'opacity:0.4;'}">
+                <div class="menu-icon">${name==='微信'?'💬':name==='微博'?'📱':name==='抖音'?'🎵':name==='小红书'?'📕':name==='豆瓣'?'📚':name==='短信'?'✉️':name==='电话'?'📞':'🐦'}</div>
+                <span class="menu-label">${name}</span>
+                ${count>0 ? `<span class="badge" style="display:block">${count}</span>` : ''}
+            </div>`;
+        }).join('');
+    },
+    renderHistory() {
+        const view = document.getElementById('storyView');
+        view.innerHTML = State.history.map(msg => {
+            const cls = msg.type === 'user' ? 'user' : 'ai';
+            let actions = '';
+            if (msg.type === 'ai') {
+                actions = `<div class="bubble-actions">
+                    <button class="bubble-action-btn" onclick="regenerate('${msg.id}')">🔄</button>
+                    <button class="bubble-action-btn" onclick="deleteBubble('${msg.id}')">🗑️</button>
+                </div>`;
+            }
+            return `<div class="story-bubble ${cls}">
+                <div>${msg.text.replace(/\n/g,'<br>')}</div>
+                ${actions}
+            </div>`;
+        }).join('');
+        // 不自动滚到底部，但显示提示
+        const indicator = document.getElementById('newMsgIndicator');
+        if (State.history.length > 0 && view.scrollTop < view.scrollHeight - view.clientHeight - 50) {
+            indicator.style.display = 'block';
+        } else {
+            indicator.style.display = 'none';
+        }
+    },
+    appendBubble(type, text, id) {
+        State.history.push({id, type, text, timestamp: Date.now()});
+        this.renderHistory();
+        const view = document.getElementById('storyView');
+        // 如果用户已经滚到底部附近，则自动滚动
+        if (view.scrollTop + view.clientHeight >= view.scrollHeight - 80) {
+            view.scrollTop = view.scrollHeight;
+            document.getElementById('newMsgIndicator').style.display = 'none';
+        } else {
+            document.getElementById('newMsgIndicator').style.display = 'block';
+        }
+    },
     updateOptions(opts) {
-        document.getElementById('optionsBar').innerHTML = opts.map(o=>`<button class="option-chip" onclick="chooseOption('${o.replace(/'/g,"\\'")}')">${o}</button>`).join('');
+        document.getElementById('optionsBar').innerHTML = opts.map(o => `<button class="option-chip" onclick="chooseOption('${o.replace(/'/g,"\\'")}')">${o}</button>`).join('');
     },
-    setApiStatus(s) { document.getElementById('apiStatus').textContent = s; },
     refreshEditPage() {
         document.getElementById('worldSetting').value = State.world;
         const s = State.self;
-        document.getElementById('myName').value = s.name || '';
-        document.getElementById('myAge').value = s.age || '';
-        document.getElementById('myHeight').value = s.height || '';
-        document.getElementById('myWeight').value = s.weight || '';
-        document.getElementById('myFamily').value = s.family || '';
-        document.getElementById('myEdu').value = s.edu || '';
-        document.getElementById('myTrait').value = s.trait || '';
-        document.getElementById('myStyle').value = s.style || '';
-        document.getElementById('myAvoid').value = s.avoid || '';
+        ['myName','myAge','myHeight','myWeight','myFamily','myEdu','myTrait','myStyle','myAvoid'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = s[id.replace('my','').toLowerCase()] || '';
+        });
         document.getElementById('apiKeyInput').value = State.apiKey;
         this.renderTargetTabs();
         this.fillTargetEditor();
     },
     renderTargetTabs() {
         const c = document.getElementById('targetTabs');
-        let h = '';
-        State.targets.forEach((t,i) => { h += `<span class="target-tab ${i===State._editIdx?'active':''}" onclick="switchEditTarget(${i})">${t.name||'新角色'}</span>`; });
-        if (State.targets.length < 5) h += '<span class="add-target-btn" onclick="addTarget()">+ 添加</span>';
-        c.innerHTML = h;
+        c.innerHTML = State.targets.map((t,i) => `<span class="target-tab ${i===State._editIdx?'active':''}" onclick="switchEditTarget(${i})">${t.name||'新角色'}</span>`).join('') +
+            (State.targets.length<5 ? '<span class="add-target-btn" onclick="addTarget()">+ 添加</span>' : '');
         document.getElementById('targetCount').textContent = State.targets.length;
     },
     fillTargetEditor() {
         const t = State.targets[State._editIdx] || {};
-        document.getElementById('tName').value = t.name || '';
-        document.getElementById('tAge').value = t.age || '';
-        document.getElementById('tHeight').value = t.height || '';
-        document.getElementById('tWeight').value = t.weight || '';
-        document.getElementById('tFamily').value = t.family || '';
-        document.getElementById('tEdu').value = t.edu || '';
-        document.getElementById('tTrait').value = t.trait || '';
-        document.getElementById('tStyle').value = t.style || '';
-        document.getElementById('tHabit').value = t.habit || '';
-        document.getElementById('tBackstory').value = t.backstory || '';
+        ['tName','tAge','tHeight','tWeight','tFamily','tEdu','tTrait','tStyle','tHabit','tBackstory'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = t[id.replace('t','').toLowerCase()] || '';
+        });
         document.getElementById('removeTargetBtn').style.display = State.targets.length>1?'block':'none';
     }
 };
 
-// 解锁
+// ========== 解锁 ==========
 function inputPin(v) {
     if (v==='clear') State.pin='';
     else if (v==='back') State.pin=State.pin.slice(0,-1);
@@ -906,140 +423,171 @@ function updateDots() {
     document.querySelectorAll('#pinContainer .pin-dot').forEach((d,i)=>{
         d.textContent = i<State.pin.length?'●':'';
         d.classList.toggle('filled', i<State.pin.length);
-        d.classList.toggle('active', i===State.pin.length);
     });
 }
 function checkPin() {
     if (State.pin === State.password) {
         State.pin=''; updateDots();
         UI.switchPage('homePage');
-        if (!State.context) setTimeout(()=>generate('开始新的一天'),400);
-    } else {
-        State.pin=''; updateDots();
-        UI.toast('密码错误');
-        if (navigator.vibrate) navigator.vibrate([50,50,50]);
-    }
+        if (State.history.length===0) generate('开始新的一天');
+        else UI.renderHistory();
+    } else { State.pin=''; updateDots(); UI.toast('密码错误'); }
 }
-function logout() {
-    UI.switchPage('unlockPage');
-}
+function logout() { UI.switchPage('unlockPage'); }
 
-// 剧情生成
-function chooseOption(opt) { generate(`玩家选择了：${opt}`); }
+// ========== 剧情生成 ==========
+function chooseOption(opt) {
+    UI.appendBubble('user', `【选项】${opt}`, 'user_'+Date.now());
+    generate(`玩家选择了：${opt}`);
+}
 function sendCustom() {
     const inp = document.getElementById('customInput');
     const text = inp.value.trim();
     if (!text) return;
     inp.value = '';
-    UI.appendStory(`<b>你：</b>${text}`);
+    UI.appendBubble('user', text, 'user_'+Date.now());
     generate(`玩家：${text}`);
 }
 
 async function generate(action) {
     const key = State.apiKey;
-    if (!key || key === 'sk-你的密钥' || key.includes('xxx')) {
-        UI.appendStory('⚠️ 请先进入「人设编辑中心」设置 API Key。');
-        return;
-    }
-    UI.showLoading();
-    UI.setApiStatus('⚡ 请求中...');
-
-    let targetsDesc = '';
-    State.targets.forEach((t,i) => {
-        targetsDesc += `\n[角色${i+1}] 姓名：${t.name}，年龄：${t.age}，身高：${t.height}cm，体重：${t.weight}kg，家庭：${t.family}，教育：${t.edu}，性格：${t.trait}，风格：${t.style}，习惯：${t.habit}，背景：${t.backstory}`;
-    });
-
-    const system = `你是一个沉浸式恋爱模拟器，擅长描写细腻的情感互动和日常生活。
-
-【世界观与背景】
-${State.world}
-
-【玩家信息】
-姓名：${State.self.name}，年龄：${State.self.age}，身高：${State.self.height}cm，体重：${State.self.weight}kg，家庭：${State.self.family}，教育：${State.self.edu}
-性格：${State.self.trait}
-说话风格：${State.self.style}
-雷点：${State.self.avoid}
-
-【当前故事中的其他角色】
-${targetsDesc}
-
-【写作要求】
-1. 生成至少 250 字的大段细腻文字，包含环境、动作、心理、对话，营造沉浸式体验。
-2. 剧情应自然引入上述多个角色，他们可以同时出现或依次出场，符合人物设定。
-3. 严格基于所有人设，使角色行为真实可信。
-4. 不要输出任何安全警告、系统提示或无关内容。
-5. 回复末尾必须提供3个选项，格式：
-   选项A：……
-   选项B：……
-   选项C：……`;
-
-    const user = `当前剧情进展：${State.context || '故事即将开始'}
-玩家动作：${action}
-请继续发展剧情。`;
-
+    if (!key || key==='sk-你的密钥') { UI.toast('请设置API Key'); return; }
+    UI.toast('⏳ AI写作中...');
+    let targetsDesc = State.targets.map((t,i)=>`[角色${i+1}] ${t.name}，${t.age}岁，${t.height}cm，${t.weight}kg，家庭：${t.family}，教育：${t.edu}，性格：${t.trait}，风格：${t.style}，习惯：${t.habit}，背景：${t.backstory}`).join('\n');
+    const system = `你是恋爱模拟器AI，严格遵守以下设定：
+【世界观】${State.world}
+【玩家】${State.self.name}，${State.self.age}岁，${State.self.trait}，风格：${State.self.style}。
+【可互动角色】${targetsDesc}
+【规则】
+1. 生成细腻大段文字(>250字)，包含环境、动作、心理、对话。人称必须正确：玩家是“我”，角色用“他/她”或名字。
+2. 剧情自然引入上述角色，可同时出现多人。
+3. 当剧情需要手机联系时，可在文本末尾添加指令：##通知##角色名##内容（如：##通知##沈瑜##请求添加微信）。系统会自动解锁对应应用并添加联系人。
+4. 绝对不要输出安全警告或系统错误。
+5. 结尾提供3个选项，格式：选项A：… 选项B：… 选项C：…`;
+    const user = `当前进度：${State.context || '开始'}。动作：${action}`;
     try {
         const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
             method:'POST',
-            headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${key}` },
-            body: JSON.stringify({
-                model:'deepseek-chat',
-                messages:[{role:'system',content:system},{role:'user',content:user}],
-                max_tokens:800, temperature:0.9
-            })
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+            body: JSON.stringify({model:'deepseek-chat',messages:[{role:'system',content:system},{role:'user',content:user}],max_tokens:800,temperature:0.9})
         });
-        if (!resp.ok) throw new Error((await resp.json().catch(()=>({}))).error?.message || `HTTP ${resp.status}`);
         const data = await resp.json();
         let content = data.choices[0].message.content;
-
+        // 处理通知指令
+        const notifRegex = /##通知##(.+?)##(.+)/g;
+        let m;
+        while ((m = notifRegex.exec(content)) !== null) {
+            const name = m[1].trim(), msg = m[2].trim();
+            if (!State.unlockedApps.includes('微信')) { State.unlockedApps.push('微信'); UI.toast('🔓 微信已解锁'); }
+            if (!State.contacts[name]) State.contacts[name] = {added:true, messages:[]};
+            else State.contacts[name].added = true;
+            State.contacts[name].messages.push({from:name, text:msg, time:Date.now()});
+            State.appNotifications['微信'] = (State.appNotifications['微信']||0)+1;
+            UI.notify(`${name}：${msg}`);
+            content = content.replace(m[0], '');
+        }
         const optRegex = /选项([ABC])[：:]\s*(.+)/g;
         const options = [];
-        let mainText = content, m;
+        let mainText = content;
         while ((m = optRegex.exec(content)) !== null) options.push(`${m[1]}: ${m[2].trim()}`);
         if (options.length) mainText = content.split(/选项[ABC][：:]/)[0].trim();
-
-        // 移除 loading
-        const view = document.getElementById('storyView');
-        const lastB = view.querySelectorAll('.story-bubble');
-        if (lastB.length && lastB[lastB.length-1].querySelector('.loading-dots')) lastB[lastB.length-1].remove();
-
-        UI.appendStory(mainText.replace(/\n/g,'<br>'));
-        UI.updateOptions(options.length ? options : ['继续聊天','换个话题','看看反应']);
-
-        State.context = '剧情持续发展中';
-        State.history.push({action, time:Date.now()});
+        const bubbleId = 'ai_'+Date.now();
+        UI.appendBubble('ai', mainText, bubbleId);
+        UI.updateOptions(options.length ? options : ['继续','换个话题','沉默']);
+        State.context = '剧情发展中';
         State.persist();
-        UI.setApiStatus('✅ 完成');
     } catch(e) {
-        const view = document.getElementById('storyView');
-        const lastB = view.querySelectorAll('.story-bubble');
-        if (lastB.length && lastB[lastB.length-1].querySelector('.loading-dots')) lastB[lastB.length-1].remove();
-        UI.appendStory(`❌ 请求失败：${e.message}`);
-        UI.setApiStatus('❌ 错误');
+        UI.toast('❌ '+e.message);
     }
 }
 
-// 社交应用
+// 修正指令
+function applyCorrection() {
+    const correction = document.getElementById('correctionInput').value.trim();
+    if (!correction) return;
+    document.getElementById('correctionInput').value = '';
+    generate(`系统修正指令：${correction}。请根据此指令调整后续回复的风格、用词或逻辑。`);
+}
+
+// 重新生成
+function regenerate(bubbleId) {
+    const idx = State.history.findIndex(h=>h.id===bubbleId);
+    if (idx===-1) return;
+    // 找到此AI气泡之前的最近用户动作
+    let action = '重新生成';
+    for (let i=idx-1; i>=0; i--) {
+        if (State.history[i].type==='user') {
+            action = State.history[i].text.replace('【选项】','').trim();
+            break;
+        }
+    }
+    // 删除此AI气泡
+    State.history.splice(idx, 1);
+    UI.renderHistory();
+    generate(action);
+}
+
+function deleteBubble(bubbleId) {
+    State.history = State.history.filter(h=>h.id!==bubbleId);
+    UI.renderHistory();
+    State.persist();
+}
+
+function scrollToBottom() {
+    const view = document.getElementById('storyView');
+    view.scrollTop = view.scrollHeight;
+    document.getElementById('newMsgIndicator').style.display = 'none';
+}
+
+// ========== 社交应用 ==========
 function openApp(name) {
     document.getElementById('socialTitle').textContent = name;
-    const names = State.targets.map(t=>t.name).join('、');
-    document.getElementById('socialBody').innerHTML = `<div class="chat-msg received">✨ ${name} - 与 ${names} 的对话</div>`;
+    const body = document.getElementById('socialBody');
+    // 收集该应用中已有联系人的消息
+    let contactsToShow = [];
+    for (let [cname, cdata] of Object.entries(State.contacts)) {
+        if (cdata.added && cdata.messages.length>0) contactsToShow.push({name:cname, msgs:cdata.messages});
+    }
+    // 加入NPC随机聊天
+    if (name==='短信') {
+        if (!contactsToShow.length) contactsToShow.push({name:'系统', msgs:[{from:'系统',text:'暂无消息'}]});
+    }
+    if (contactsToShow.length===0) {
+        body.innerHTML = '<div class="no-access">暂无联系人消息</div>';
+    } else {
+        body.innerHTML = contactsToShow.map(c => 
+            `<div style="margin-bottom:15px;"><b>${c.name}</b>`+
+            c.msgs.map(m=>`<div class="chat-msg ${m.from===c.name?'received':'sent'}">${m.text}</div>`).join('')+
+            `</div>`
+        ).join('');
+    }
+    State.appNotifications[name] = 0;
+    UI.renderMenu();
     UI.switchPage('socialPage');
 }
+
+function closeSocialApp() {
+    UI.switchPage('homePage');
+    // 退出社交后自动推进剧情
+    generate('退出社交软件，继续日常');
+}
+
 function sendSocialMsg() {
     const inp = document.getElementById('socialInput');
     const text = inp.value.trim();
     if (!text) return;
     const body = document.getElementById('socialBody');
     const msg = document.createElement('div'); msg.className='chat-msg sent'; msg.textContent=text;
-    body.appendChild(msg); inp.value=''; body.scrollTop=body.scrollHeight;
+    body.appendChild(msg); inp.value='';
+    // 模拟回复
     setTimeout(()=>{
-        const r = document.createElement('div'); r.className='chat-msg received';
-        r.textContent = ['嗯。','今天怎么样？','想你了…','好的。'][Math.floor(Math.random()*4)];
-        body.appendChild(r); body.scrollTop=body.scrollHeight;
-    }, 600+Math.random()*1200);
+        const reply = document.createElement('div'); reply.className='chat-msg received';
+        reply.textContent = ['嗯','知道了','哈哈','好的'][Math.floor(Math.random()*4)];
+        body.appendChild(reply);
+    }, 600);
 }
 
-// 编辑页逻辑
+// ========== 编辑页 ==========
 function switchEditTarget(idx) { State._editIdx = idx; UI.renderTargetTabs(); UI.fillTargetEditor(); }
 function addTarget() {
     if (State.targets.length>=5) return;
@@ -1047,41 +595,30 @@ function addTarget() {
     State._editIdx = State.targets.length-1;
     UI.renderTargetTabs(); UI.fillTargetEditor();
 }
-function removeCurrentTarget() {
+document.getElementById('removeTargetBtn').onclick = ()=>{
     if (State.targets.length<=1) return;
     State.targets.splice(State._editIdx,1);
     State._editIdx = Math.min(State._editIdx, State.targets.length-1);
     UI.renderTargetTabs(); UI.fillTargetEditor();
-    UI.toast('角色已删除');
-}
-document.getElementById('removeTargetBtn').onclick = removeCurrentTarget;
+};
 
 async function aiOptimizeTarget() {
     const key = State.apiKey;
-    if (!key || key === 'sk-你的密钥') { UI.toast('请先设置 API Key'); return; }
+    if (!key || key==='sk-你的密钥') { UI.toast('请先设置API Key'); return; }
     const t = State.targets[State._editIdx];
-    const prompt = `请根据以下基础信息，生成一个更详细、真实的角色人设，补充年龄、身高体重、家庭背景、教育程度、性格、说话风格、习惯和背景故事，使其接近现实中的真实人物。返回格式为JSON，键名：name, age, height, weight, family, edu, trait, style, habit, backstory。现有信息：${JSON.stringify(t)}`;
+    const prompt = `请根据以下基础信息，优化角色人设，补充年龄身高体重家庭背景教育性格风格习惯背景故事，使其真实可信。返回JSON：{name,age,height,weight,family,edu,trait,style,habit,backstory}。现有：${JSON.stringify(t)}`;
     try {
-        UI.toast('🤖 AI 正在优化人设…');
-        const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
-            method:'POST',
-            headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${key}` },
-            body: JSON.stringify({
-                model:'deepseek-chat',
-                messages:[{role:'user',content:prompt}],
-                max_tokens:400, temperature:0.7
-            })
+        const resp = await fetch('https://api.deepseek.com/v1/chat/completions',{
+            method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+            body: JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:prompt}],max_tokens:400})
         });
         const data = await resp.json();
         const text = data.choices[0].message.content;
-        const json = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] || '{}');
+        const json = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0]||'{}');
         Object.assign(t, json);
-        State.persist();
         UI.fillTargetEditor();
-        UI.toast('✅ 人设已优化');
-    } catch(e) {
-        UI.toast('❌ 优化失败：'+e.message);
-    }
+        UI.toast('✅ 优化完成');
+    } catch(e) { UI.toast('❌ 优化失败'); }
 }
 
 function saveAll() {
@@ -1108,24 +645,35 @@ function saveAll() {
     t.habit = document.getElementById('tHabit').value;
     t.backstory = document.getElementById('tBackstory').value;
     State.persist();
-    UI.toast('✅ 全部设置已保存！');
+    UI.toast('✅ 保存成功');
     setTimeout(()=>UI.switchPage('homePage'), 600);
+}
+
+function dismissNotification() {
+    document.getElementById('notification').style.display = 'none';
 }
 
 // 初始化
 State.init();
-UI.refreshEditPage();
+UI.renderHistory();
+UI.renderMenu();
 window.switchPage = UI.switchPage.bind(UI);
 window.chooseOption = chooseOption;
 window.sendCustom = sendCustom;
 window.openApp = openApp;
+window.closeSocialApp = closeSocialApp;
 window.sendSocialMsg = sendSocialMsg;
-window.inputPin = inputPin;
+window.regenerate = regenerate;
+window.deleteBubble = deleteBubble;
+window.applyCorrection = applyCorrection;
 window.switchEditTarget = switchEditTarget;
 window.addTarget = addTarget;
 window.saveAll = saveAll;
 window.aiOptimizeTarget = aiOptimizeTarget;
+window.scrollToBottom = scrollToBottom;
 window.logout = logout;
+window.inputPin = inputPin;
+window.dismissNotification = dismissNotification;
 </script>
 </body>
 </html>
